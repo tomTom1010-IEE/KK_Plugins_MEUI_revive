@@ -4,7 +4,7 @@ using UnityEngine;
 namespace MaterialEditorAPI
 {
     /// <summary>
-    /// Class containing material data, used to for copy and paste of material edits
+    /// Class containing material data, used for copy and paste of material edits
     /// </summary>
     public class CopyContainer
     {
@@ -36,7 +36,7 @@ namespace MaterialEditorAPI
         public List<ProjectorProperty> ProjectorPropertyList = new List<ProjectorProperty>();
 
         /// <summary>
-        /// Whether there are any copied edits
+        /// Gets a value indicating whether the container is empty (contains no copied edits)
         /// </summary>
         public bool IsEmpty
         {
@@ -64,7 +64,7 @@ namespace MaterialEditorAPI
         }
 
         /// <summary>
-        /// Clear any copied edits
+        /// Clears all copied edits from the container
         /// </summary>
         public void ClearAll()
         {
@@ -93,7 +93,7 @@ namespace MaterialEditorAPI
             public float Value;
 
             /// <summary>
-            /// Data storage class for float properties
+            /// Initializes a new instance of the <see cref="MaterialFloatProperty"/> class with the specified property name and value.
             /// </summary>
             /// <param name="property">Name of the property</param>
             /// <param name="value">Value</param>
@@ -119,7 +119,7 @@ namespace MaterialEditorAPI
             public bool Value;
 
             /// <summary>
-            /// Data storage class for keyword properties
+            /// Initializes a new instance of the <see cref="MaterialKeywordProperty"/> class with the specified property name and value.
             /// </summary>
             /// <param name="property">Name of the property</param>
             /// <param name="value">Value</param>
@@ -145,7 +145,7 @@ namespace MaterialEditorAPI
             public Color Value;
 
             /// <summary>
-            /// Data storage class for color properties
+            /// Initializes a new instance of the <see cref="MaterialColorProperty"/> class with the specified property name and value.
             /// </summary>
             /// <param name="property">Name of the property</param>
             /// <param name="value">Value</param>
@@ -156,11 +156,25 @@ namespace MaterialEditorAPI
             }
         }
 
+        /// <summary>
+        /// Data storage class for vector properties
+        /// </summary>
         public class MaterialVectorProperty
         {
+            /// <summary>
+            /// Name of the property
+            /// </summary>
             public string Property;
+            /// <summary>
+            /// Value
+            /// </summary>
             public Vector4 Value;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="MaterialVectorProperty"/> class with the specified property name and value.
+            /// </summary>
+            /// <param name="property">Name of the property</param>
+            /// <param name="value">Value</param>
             public MaterialVectorProperty(string property, Vector4 value)
             {
                 Property = property;
@@ -191,7 +205,7 @@ namespace MaterialEditorAPI
             public Vector2? Scale;
 
             /// <summary>
-            /// Data storage class for texture properties
+            /// Initializes a new instance of the <see cref="MaterialTextureProperty"/> class with the specified property name, texture data, offset and scale.
             /// </summary>
             /// <param name="property">Name of the property</param>
             /// <param name="data">Byte array containing the texture</param>
@@ -206,14 +220,25 @@ namespace MaterialEditorAPI
             }
         }
 
+        /// <summary>
+        /// Data storage class for cubemap properties
+        /// </summary>
         public class MaterialCubemapProperty
         {
+            /// <summary>
+            /// Name of the property
+            /// </summary>
             public string Property;
             /// <summary>
             /// Encoded PNG or Radiance HDR Cubemap source data.
             /// </summary>
             public byte[] Data;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="MaterialCubemapProperty"/> class with the specified property name and data.
+            /// </summary>
+            /// <param name="property">Name of the property</param>
+            /// <param name="data">Byte array containing the cubemap data</param>
             public MaterialCubemapProperty(string property, byte[] data = null)
             {
                 Property = property;
@@ -236,7 +261,7 @@ namespace MaterialEditorAPI
             public int? RenderQueue;
 
             /// <summary>
-            /// Data storage class for shader data
+            /// Initializes a new instance of the <see cref="MaterialShader"/> class with the specified shader name and render queue.
             /// </summary>
             /// <param name="shaderName">Name of the shader</param>
             /// <param name="renderQueue">Render queue</param>
@@ -246,7 +271,7 @@ namespace MaterialEditorAPI
                 RenderQueue = renderQueue;
             }
             /// <summary>
-            /// Data storage class for shader data
+            /// Initializes a new instance of the <see cref="MaterialShader"/> class with the specified shader name.
             /// </summary>
             /// <param name="shaderName">Name of the shader</param>
             public MaterialShader(string shaderName)
@@ -254,7 +279,7 @@ namespace MaterialEditorAPI
                 ShaderName = shaderName;
             }
             /// <summary>
-            /// Data storage class for shader data
+            /// Initializes a new instance of the <see cref="MaterialShader"/> class with the specified render queue.
             /// </summary>
             /// <param name="renderQueue">Render queue</param>
             public MaterialShader(int? renderQueue)
@@ -263,9 +288,9 @@ namespace MaterialEditorAPI
             }
 
             /// <summary>
-            /// Check if the shader name and render queue are both null. Safe to delete this data if true.
+            /// Checks if the shader name and render queue are both null. Safe to delete this data if true.
             /// </summary>
-            /// <returns></returns>
+            /// <returns>True if both ShaderName and RenderQueue are null; otherwise false.</returns>
             public bool NullCheck() => ShaderName.IsNullOrEmpty() && RenderQueue == null;
         }
 
@@ -284,7 +309,7 @@ namespace MaterialEditorAPI
             public float Value;
 
             /// <summary>
-            /// Data storage class for projector properties
+            /// Initializes a new instance of the <see cref="ProjectorProperty"/> class with the specified property and value.
             /// </summary>
             /// <param name="property">Name of the property</param>
             /// <param name="value">Value</param>

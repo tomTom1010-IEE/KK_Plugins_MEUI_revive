@@ -258,6 +258,14 @@ namespace MaterialEditorAPI
     /// <summary>Semantic float-backed enum property editor.</summary>
     public sealed class MaterialEditorEnumPropertyEditor : MaterialEditorPropertyEditor
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MaterialEditorEnumPropertyEditor"/> class.
+        /// </summary>
+        /// <param name="value">Current value of the enum property.</param>
+        /// <param name="originalValue">Original value used by Reset and changed-state display.</param>
+        /// <param name="options">Enumeration options to display in the dropdown.</param>
+        /// <param name="valueChanged">Called after the user selects a value.</param>
+        /// <param name="reset">Called when the value returns to its original state.</param>
         public MaterialEditorEnumPropertyEditor(
             float value,
             float originalValue,
@@ -281,10 +289,13 @@ namespace MaterialEditorAPI
             Reset = reset ?? throw new ArgumentNullException(nameof(reset));
         }
 
+        /// <summary>Current value of the enum property.</summary>
         public float Value { get; }
+        /// <summary>Original value used by Reset and changed-state display.</summary>
         public float OriginalValue { get; }
         /// <summary>Whether multiple extension targets currently have different values.</summary>
         public bool IsMixed { get; set; }
+        /// <summary>Enumeration options to display in the dropdown.</summary>
         public IList<MaterialEditorEnumOption> Options { get; }
         /// <summary>Called after the user selects a value.</summary>
         public Action<float> ValueChanged { get; }
@@ -297,6 +308,14 @@ namespace MaterialEditorAPI
     /// <summary>Semantic vector property editor.</summary>
     public sealed class MaterialEditorVectorPropertyEditor : MaterialEditorPropertyEditor
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MaterialEditorVectorPropertyEditor"/> class.
+        /// </summary>
+        /// <param name="value">Current four-component backing value.</param>
+        /// <param name="originalValue">Original four-component backing value.</param>
+        /// <param name="componentCount">Number of components shown by the editor (2-4).</param>
+        /// <param name="valueChanged">Called after the user changes the vector.</param>
+        /// <param name="reset">Called when the vector returns to its original state.</param>
         public MaterialEditorVectorPropertyEditor(
             Vector4 value,
             Vector4 originalValue,
@@ -339,6 +358,15 @@ namespace MaterialEditorAPI
     /// <summary>Semantic float-backed toggle property editor.</summary>
     public sealed class MaterialEditorTogglePropertyEditor : MaterialEditorPropertyEditor
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MaterialEditorTogglePropertyEditor"/> class.
+        /// </summary>
+        /// <param name="value">Current value of the toggle property.</param>
+        /// <param name="originalValue">Original value used by Reset and changed-state display.</param>
+        /// <param name="offValue">Numeric value represented by the off state of the toggle.</param>
+        /// <param name="onValue">Numeric value represented by the on state of the toggle.</param>
+        /// <param name="valueChanged">Called after the user toggles the value.</param>
+        /// <param name="reset">Called when the value returns to its original state.</param>
         public MaterialEditorTogglePropertyEditor(
             float value,
             float originalValue,
@@ -355,11 +383,15 @@ namespace MaterialEditorAPI
             Reset = reset ?? throw new ArgumentNullException(nameof(reset));
         }
 
+        /// <summary>Current value of the toggle property.</summary>
         public float Value { get; }
+        /// <summary>Original value used by Reset and changed-state display.</summary>
         public float OriginalValue { get; }
         /// <summary>Whether multiple extension targets currently have different values.</summary>
         public bool IsMixed { get; set; }
+        /// <summary>Numeric value represented by the off state of the toggle.</summary>
         public float OffValue { get; }
+        /// <summary>Numeric value represented by the on state of the toggle.</summary>
         public float OnValue { get; }
         /// <summary>Called after the user toggles the value.</summary>
         public Action<float> ValueChanged { get; }

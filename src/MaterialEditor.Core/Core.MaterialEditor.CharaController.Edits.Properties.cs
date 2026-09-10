@@ -1,23 +1,16 @@
-using KKAPI.Chara;
-using MaterialEditorAPI;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 using static MaterialEditorAPI.MaterialAPI;
-using static MaterialEditorAPI.MaterialEditorPluginBase;
 namespace KK_Plugins.MaterialEditor
 {
-    using MEAnimationController = MEAnimationController<MaterialEditorCharaController, MaterialEditorCharaController.MaterialTextureProperty>;
-
     public partial class MaterialEditorCharaController
     {
         /// <summary>
         /// Add a float property to be saved and loaded with the card and optionally also update the materials.
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="value">Value</param>
@@ -45,6 +38,7 @@ namespace KK_Plugins.MaterialEditor
         /// Get the saved material property value or null if none is saved
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="go">GameObject the material belongs to</param>
@@ -63,6 +57,7 @@ namespace KK_Plugins.MaterialEditor
         /// Get the saved material property's original value or null if none is saved
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="go">GameObject the material belongs to</param>
@@ -81,6 +76,7 @@ namespace KK_Plugins.MaterialEditor
         /// Remove the saved material property value if one is saved and optionally also update the materials
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="go">GameObject the material belongs to</param>
@@ -100,6 +96,7 @@ namespace KK_Plugins.MaterialEditor
         /// Add a keyword property to be saved and loaded with the card and optionally also update the materials.
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="value">Value</param>
@@ -127,6 +124,7 @@ namespace KK_Plugins.MaterialEditor
         /// Get the saved material property value or null if none is saved
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="go">GameObject the material belongs to</param>
@@ -139,6 +137,7 @@ namespace KK_Plugins.MaterialEditor
         /// Get the saved material property's original value or null if none is saved
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="go">GameObject the material belongs to</param>
@@ -151,6 +150,7 @@ namespace KK_Plugins.MaterialEditor
         /// Remove the saved material property value if one is saved and optionally also update the materials
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="go">GameObject the material belongs to</param>
@@ -170,6 +170,7 @@ namespace KK_Plugins.MaterialEditor
         /// Add a color property to be saved and loaded with the card and optionally also update the materials.
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="value">Value</param>
@@ -197,6 +198,7 @@ namespace KK_Plugins.MaterialEditor
         /// Get the saved material property value or null if none is saved
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="go">GameObject the material belongs to</param>
@@ -209,6 +211,7 @@ namespace KK_Plugins.MaterialEditor
         /// Get the saved material property's original value or null if none is saved
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="go">GameObject the material belongs to</param>
@@ -221,6 +224,7 @@ namespace KK_Plugins.MaterialEditor
         /// Remove the saved material property value if one is saved and optionally also update the materials
         /// </summary>
         /// <param name="slot">Slot of the clothing (0=tops, 1=bottoms, etc.), the hair (0=back, 1=front, etc.), or of the accessory. Ignored for other object types.</param>
+        /// <param name="objectType">Type of the object.</param>
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <param name="go">GameObject the material belongs to</param>

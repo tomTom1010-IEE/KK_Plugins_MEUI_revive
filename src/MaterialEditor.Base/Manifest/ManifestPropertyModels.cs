@@ -6,6 +6,11 @@ namespace MaterialEditorAPI
     /// <summary>One numeric option displayed by an enum property editor.</summary>
     public sealed class MaterialEditorEnumOption
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MaterialEditorEnumOption"/> class.
+        /// </summary>
+        /// <param name="value">Numeric value associated with this option.</param>
+        /// <param name="displayName">Display name for this option.</param>
         public MaterialEditorEnumOption(float value, string displayName)
         {
             Value = value;
@@ -14,7 +19,9 @@ namespace MaterialEditorAPI
                 : displayName;
         }
 
+        /// <summary>Numeric value associated with this option.</summary>
         public float Value { get; }
+        /// <summary>Display name for this option.</summary>
         public string DisplayName { get; }
     }
 

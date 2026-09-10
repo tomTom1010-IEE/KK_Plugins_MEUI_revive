@@ -5,17 +5,29 @@ namespace MaterialEditorAPI
     /// <summary>Comparison performed by a property visibility condition.</summary>
     public enum MaterialEditorConditionComparison
     {
+        /// <summary>Tests for equality.</summary>
         Equal,
+        /// <summary>Tests for inequality.</summary>
         NotEqual,
+        /// <summary>Tests if the value is greater than the comparison value.</summary>
         GreaterThan,
+        /// <summary>Tests if the value is greater than or equal to the comparison value.</summary>
         GreaterThanOrEqual,
+        /// <summary>Tests if the value is less than the comparison value.</summary>
         LessThan,
+        /// <summary>Tests if the value is less than or equal to the comparison value.</summary>
         LessThanOrEqual
     }
 
     /// <summary>A simple numeric condition referencing another shader property.</summary>
     public sealed class MaterialEditorPropertyCondition
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MaterialEditorPropertyCondition"/> class.
+        /// </summary>
+        /// <param name="propertyName">Name of the shader property to reference, without a leading underscore.</param>
+        /// <param name="comparison">The comparison operation to perform.</param>
+        /// <param name="value">Expected numeric value for the comparison.</param>
         public MaterialEditorPropertyCondition(
             string propertyName,
             MaterialEditorConditionComparison comparison,
@@ -33,6 +45,7 @@ namespace MaterialEditorAPI
 
         /// <summary>Referenced shader property name, without a leading underscore.</summary>
         public string PropertyName { get; }
+        /// <summary>The comparison operation to perform.</summary>
         public MaterialEditorConditionComparison Comparison { get; }
         /// <summary>Expected numeric value.</summary>
         public float Value { get; }

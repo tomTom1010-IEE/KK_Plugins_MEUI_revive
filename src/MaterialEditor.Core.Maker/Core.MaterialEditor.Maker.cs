@@ -54,6 +54,9 @@ namespace KK_Plugins.MaterialEditor
         /// </summary>
         public static MEMaker Instance;
 
+        /// <summary>
+        /// Button used to show the Material Editor UI in the maker
+        /// </summary>
         public static MakerButton MaterialEditorButton;
         internal static int currentHairIndex;
         internal static int currentClothesIndex;
@@ -258,6 +261,9 @@ namespace KK_Plugins.MaterialEditor
 #endif
         }
 
+        /// <summary>
+        /// Toggles the visibility of the Material Editor button in the maker interface based on the current accessory.
+        /// </summary>
         public static void ToggleButtonVisibility()
         {
             if (!MakerAPI.InsideMaker || MaterialEditorButton == null)
@@ -277,7 +283,7 @@ namespace KK_Plugins.MaterialEditor
         /// <summary>
         /// Shows the MaterialEditor UI for the character or refreshes the UI if already open
         /// </summary>
-        /// <param name="filter"></param>
+        /// <param name="filter">Optional filter for materials to display</param>
         public void UpdateUICharacter(string filter = "")
         {
             if (!MakerAPI.InsideAndLoaded)
@@ -290,7 +296,7 @@ namespace KK_Plugins.MaterialEditor
         /// <summary>
         /// Shows the MaterialEditor UI for the specified clothing index or refreshes the UI if already open
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="index">Index of the clothing item to show UI for</param>
         public void UpdateUIClothes(int index)
         {
             if (!MakerAPI.InsideAndLoaded)
@@ -321,7 +327,7 @@ namespace KK_Plugins.MaterialEditor
         }
 
         /// <summary>
-        /// Shows the MaterialEditor UI for the currently selected accesory or refreshes the UI if already open
+        /// Shows the MaterialEditor UI for the currently selected accessory or refreshes the UI if already open
         /// </summary>
         public void UpdateUIAccessory()
         {
@@ -338,6 +344,7 @@ namespace KK_Plugins.MaterialEditor
         /// <summary>
         /// Shows the MaterialEditor UI for the specified hair index or refreshes the UI if already open
         /// </summary>
+        /// <param name="index">Index of the hair item to show UI for</param>
         public void UpdateUIHair(int index)
         {
             if (!MakerAPI.InsideAndLoaded)
@@ -385,58 +392,82 @@ namespace KK_Plugins.MaterialEditor
             new MaterialEditService(new CharaMaterialEditRepository(
                 gameObject => MaterialEditorPlugin.GetCharaController(MakerAPI.GetCharacterControl())));
 
+        /// <inheritdoc/>
         public override string GetRendererPropertyValueOriginal(object data, Renderer renderer, RendererProperties property, GameObject go) =>
             EditService.GetRendererPropertyValueOriginal(data, renderer, property, go);
+        /// <inheritdoc/>
         public override string GetRendererPropertyValue(object data, Renderer renderer, RendererProperties property, GameObject go) =>
             EditService.GetRendererPropertyValue(data, renderer, property, go);
+        /// <inheritdoc/>
         public override void SetRendererProperty(object data, Renderer renderer, RendererProperties property, string value, GameObject go) =>
             EditService.SetRendererProperty(data, renderer, property, value, go);
+        /// <inheritdoc/>
         public override void RemoveRendererProperty(object data, Renderer renderer, RendererProperties property, GameObject go) =>
             EditService.RemoveRendererProperty(data, renderer, property, go);
 
+        /// <inheritdoc/>
         public override float? GetProjectorPropertyValueOriginal(object data, Projector projector, ProjectorProperties property, GameObject gameObject) =>
             EditService.GetProjectorPropertyValueOriginal(data, projector, property, gameObject);
+        /// <inheritdoc/>
         public override float? GetProjectorPropertyValue(object data, Projector projector, ProjectorProperties property, GameObject gameObject) =>
             EditService.GetProjectorPropertyValue(data, projector, property, gameObject);
+        /// <inheritdoc/>
         public override void SetProjectorProperty(object data, Projector projector, ProjectorProperties property, float value, GameObject gameObject) =>
             EditService.SetProjectorProperty(data, projector, property, value, gameObject);
+        /// <inheritdoc/>
         public override void RemoveProjectorProperty(object data, Projector projector, ProjectorProperties property, GameObject gameObject) =>
             EditService.RemoveProjectorProperty(data, projector, property, gameObject);
+        /// <inheritdoc/>
         public override IEnumerable<Projector> GetProjectorList(object data, GameObject gameObject) =>
             EditService.GetProjectorList(data, gameObject);
 
+        /// <inheritdoc/>
         public override void MaterialCopyEdits(object data, Material material, GameObject go) =>
             EditService.MaterialCopyEdits(data, material, go);
+        /// <inheritdoc/>
         public override void MaterialPasteEdits(object data, Material material, GameObject go) =>
             EditService.MaterialPasteEdits(data, material, go);
+        /// <inheritdoc/>
         public override void MaterialCopyRemove(object data, Material material, GameObject go) =>
             EditService.MaterialCopyRemove(data, material, go);
 
+        /// <inheritdoc/>
         public override string GetMaterialNameOriginal(object data, Renderer renderer, Material material, GameObject gameObject) =>
             EditService.GetMaterialNameOriginal(data, renderer, material, gameObject);
+        /// <inheritdoc/>
         public override void SetMaterialName(object data, Renderer renderer, Material material, string value, GameObject gameObject) =>
             EditService.SetMaterialName(data, renderer, material, value, gameObject);
+        /// <inheritdoc/>
         public override void RemoveMaterialName(object data, Renderer renderer, Material material, GameObject gameObject) =>
             EditService.RemoveMaterialName(data, renderer, material, gameObject);
 
+        /// <inheritdoc/>
         public override string GetMaterialShaderNameOriginal(object data, Material material, GameObject go) =>
             EditService.GetMaterialShaderNameOriginal(data, material, go);
+        /// <inheritdoc/>
         public override void SetMaterialShaderName(object data, Material material, string value, GameObject go) =>
             EditService.SetMaterialShaderName(data, material, value, go);
+        /// <inheritdoc/>
         public override void RemoveMaterialShaderName(object data, Material material, GameObject go) =>
             EditService.RemoveMaterialShaderName(data, material, go);
 
+        /// <inheritdoc/>
         public override int? GetMaterialShaderRenderQueueOriginal(object data, Material material, GameObject go) =>
             EditService.GetMaterialShaderRenderQueueOriginal(data, material, go);
+        /// <inheritdoc/>
         public override void SetMaterialShaderRenderQueue(object data, Material material, int value, GameObject go) =>
             EditService.SetMaterialShaderRenderQueue(data, material, value, go);
+        /// <inheritdoc/>
         public override void RemoveMaterialShaderRenderQueue(object data, Material material, GameObject go) =>
             EditService.RemoveMaterialShaderRenderQueue(data, material, go);
 
+        /// <inheritdoc/>
         public override bool GetMaterialTextureValueOriginal(object data, Material material, string propertyName, GameObject go) =>
             EditService.GetMaterialTextureValueOriginal(data, material, propertyName, go);
+        /// <inheritdoc/>
         public override void SetMaterialTexture(object data, Material material, string propertyName, string filePath, GameObject go) =>
             EditService.SetMaterialTexture(data, material, propertyName, filePath, go);
+        /// <inheritdoc/>
         public override void RemoveMaterialTexture(object data, Material material, string propertyName, GameObject go) =>
             EditService.RemoveMaterialTexture(data, material, propertyName, go);
 
@@ -450,38 +481,52 @@ namespace KK_Plugins.MaterialEditor
         public override void RemoveMaterialCubemap(object data, Material material, string propertyName, GameObject go) =>
             EditService.RemoveMaterialCubemap(data, material, propertyName, go);
 
+        /// <inheritdoc/>
         public override Vector2? GetMaterialTextureOffsetOriginal(object data, Material material, string propertyName, GameObject go) =>
             EditService.GetMaterialTextureOffsetOriginal(data, material, propertyName, go);
+        /// <inheritdoc/>
         public override void SetMaterialTextureOffset(object data, Material material, string propertyName, Vector2 value, GameObject go) =>
             EditService.SetMaterialTextureOffset(data, material, propertyName, value, go);
+        /// <inheritdoc/>
         public override void RemoveMaterialTextureOffset(object data, Material material, string propertyName, GameObject go) =>
             EditService.RemoveMaterialTextureOffset(data, material, propertyName, go);
-
+        /// <inheritdoc/>
         public override Vector2? GetMaterialTextureScaleOriginal(object data, Material material, string propertyName, GameObject go) =>
             EditService.GetMaterialTextureScaleOriginal(data, material, propertyName, go);
+        /// <inheritdoc/>
         public override void SetMaterialTextureScale(object data, Material material, string propertyName, Vector2 value, GameObject go) =>
             EditService.SetMaterialTextureScale(data, material, propertyName, value, go);
+        /// <inheritdoc/>
         public override void RemoveMaterialTextureScale(object data, Material material, string propertyName, GameObject go) =>
             EditService.RemoveMaterialTextureScale(data, material, propertyName, go);
 
+        /// <inheritdoc/>
         public override Color? GetMaterialColorPropertyValueOriginal(object data, Material material, string propertyName, GameObject go) =>
             EditService.GetMaterialColorPropertyValueOriginal(data, material, propertyName, go);
+        /// <inheritdoc/>
         public override void SetMaterialColorProperty(object data, Material material, string propertyName, Color value, GameObject go) =>
             EditService.SetMaterialColorProperty(data, material, propertyName, value, go);
+        /// <inheritdoc/>
         public override void RemoveMaterialColorProperty(object data, Material material, string propertyName, GameObject go) =>
             EditService.RemoveMaterialColorProperty(data, material, propertyName, go);
 
+        /// <inheritdoc/>
         public override float? GetMaterialFloatPropertyValueOriginal(object data, Material material, string propertyName, GameObject go) =>
             EditService.GetMaterialFloatPropertyValueOriginal(data, material, propertyName, go);
+        /// <inheritdoc/>
         public override void SetMaterialFloatProperty(object data, Material material, string propertyName, float value, GameObject go) =>
             EditService.SetMaterialFloatProperty(data, material, propertyName, value, go);
+        /// <inheritdoc/>
         public override void RemoveMaterialFloatProperty(object data, Material material, string propertyName, GameObject go) =>
             EditService.RemoveMaterialFloatProperty(data, material, propertyName, go);
 
+        /// <inheritdoc/>
         public override bool? GetMaterialKeywordPropertyValueOriginal(object data, Material material, string propertyName, GameObject go) =>
             EditService.GetMaterialKeywordPropertyValueOriginal(data, material, propertyName, go);
+        /// <inheritdoc/>
         public override void SetMaterialKeywordProperty(object data, Material material, string propertyName, bool value, GameObject go) =>
             EditService.SetMaterialKeywordProperty(data, material, propertyName, value, go);
+        /// <inheritdoc/>
         public override void RemoveMaterialKeywordProperty(object data, Material material, string propertyName, GameObject go) =>
             EditService.RemoveMaterialKeywordProperty(data, material, propertyName, go);
     }

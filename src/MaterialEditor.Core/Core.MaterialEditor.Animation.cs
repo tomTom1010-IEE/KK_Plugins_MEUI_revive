@@ -7,26 +7,60 @@ using MessagePack;
 
 namespace KK_Plugins.MaterialEditor
 {
+    /// <summary>
+    /// Represents a single frame in an animation sequence.
+    /// </summary>
     [Serializable]
     [MessagePackObject(false)]
     public class MEAnimationFrame
     {
+        /// <summary>
+        /// Texture ID to set for this frame of the animation
+        /// </summary>
         [Key(0)] public int texID;
 
+        /// <summary>
+        /// First frame index
+        /// </summary>
         [Key(1)] public int beginFrame;
 
+        /// <summary>
+        /// Number of frames this frame is shown
+        /// </summary>
         [Key(2)] public int frames;
     }
 
+    /// <summary>
+    /// Represents the definition of an animation.
+    /// </summary>
     [Serializable]
     [MessagePackObject(true)]
     public class MEAnimationDefine
     {
+        /// <summary>
+        /// Texture ID of the parent texture
+        /// </summary>
         public int parentTexID;
+        /// <summary>
+        /// Total number of frames in the animation
+        /// </summary>
         public int totalFrames;
+        /// <summary>
+        /// Frames per second for the animation playback
+        /// </summary>
         public int framePerSecond;
+        /// <summary>
+        /// Number of times to repeat the animation sequence
+        /// BUG: Not implemented?
+        /// </summary>
         public int iterations;
+        /// <summary>
+        /// Total time in seconds for one complete animation cycle
+        /// </summary>
         public float totalTime;
+        /// <summary>
+        /// Array of animation frames with their properties
+        /// </summary>
         public MEAnimationFrame[] frames;
     }
 
@@ -36,19 +70,46 @@ namespace KK_Plugins.MaterialEditor
     /// </summary>
     public class MEAnimationController<Controller, Property>
     {
-        static public System.Func<Property, int?> GetTexID = null;
-        static public System.Action<Controller, GameObject, Property, int> UpdateTexture = null;
+        /// <summary>
+        /// Function to get the texture ID from a property
+        /// </summary>
+        public static System.Func<Property, int?> GetTexID = null;
+        /// <summary>
+        /// Action to update textures on a controller
+        /// </summary>
+        public static System.Action<Controller, GameObject, Property, int> UpdateTexture = null;
         /// <summary>
         /// Result-aware texture callback used by transactional import paths.
         /// </summary>
-        static public System.Func<Controller, GameObject, Property, int, bool> TryUpdateTexture = null;
+        public static System.Func<Controller, GameObject, Property, int, bool> TryUpdateTexture = null;
 
+        /// <summary>
+        /// Parent controller instance
+        /// </summary>
         public Controller parent;
+        /// <summary>
+        /// Animation definition for this controller
+        /// </summary>
         public MEAnimationDefine def;
+        /// <summary>
+        /// Game object associated with this animation
+        /// </summary>
         public GameObject go;
+        /// <summary>
+        /// Current playback time in seconds
+        /// </summary>
         public float playTime;
+        /// <summary>
+        /// Currently active texture ID, -1 if none
+        /// </summary>
         public int curTexID = -1;
 
+        /// <summary>
+        /// Initializes a new instance of the MEAnimationController class
+        /// </summary>
+        /// <param name="parent">Parent controller instance</param>
+        /// <param name="go">Game object associated with this animation</param>
+        /// <param name="def">Animation definition to use</param>
         public MEAnimationController(Controller parent, GameObject go, MEAnimationDefine def)
         {
             this.parent = parent;
@@ -58,6 +119,10 @@ namespace KK_Plugins.MaterialEditor
             Reset(def);
         }
 
+        /// <summary>
+        /// Resets the animation controller with a new definition
+        /// </summary>
+        /// <param name="newAnime">New animation definition</param>
         public void Reset(MEAnimationDefine newAnime)
         {
             def = newAnime;
@@ -67,7 +132,7 @@ namespace KK_Plugins.MaterialEditor
         /// <summary>
         /// Let Time.deltaTime seconds elapse and set the texture.
         /// </summary>
-        /// <param name="controllerMap"></param>
+        /// <param name="controllerMap">Dictionary mapping properties to controllers</param>
         public static void UpdateAnimations(Dictionary<Property, MEAnimationController<Controller, Property>> controllerMap)
         {
             if (controllerMap == null || controllerMap.Count == 0)
@@ -109,6 +174,11 @@ namespace KK_Plugins.MaterialEditor
                 controllerMap.Remove(key);
         }
 
+        /// <summary>
+        /// Updates the animation for a specific property
+        /// </summary>
+        /// <param name="property">Property whose texture is animated</param>
+        /// <param name="dt">Elapsed time to add before selecting the frame</param>
         public void UpdateAnimation(Property property, float dt = 0f)
         {
             TryUpdateAnimation(property, dt);
@@ -176,7 +246,9 @@ namespace KK_Plugins.MaterialEditor
         /// <summary>
         /// Get the set of TextureIDs used from animation and texture properties
         /// </summary>
-        /// <returns></returns>
+        /// <param name="controllerMap">Dictionary mapping properties to controllers</param>
+        /// <param name="usedProperties">List of properties to check</param>
+        /// <returns>HashSet of texture IDs used by animations and textures</returns>
         public static HashSet<int> GetUsedTexIDSet(Dictionary<Property, MEAnimationController<Controller, Property>> controllerMap, IList<Property> usedProperties)
         {
             HashSet<int> used = new HashSet<int>();
@@ -202,7 +274,10 @@ namespace KK_Plugins.MaterialEditor
         }
     }
 
-    public class MEAnimationUtil
+    /// <summary>
+    /// Utility class for loading and managing animations.
+    /// </summary>
+    internal class MEAnimationUtil
     {
         /// <summary>
         /// Loads animation definition from a gif/apng byte array.
