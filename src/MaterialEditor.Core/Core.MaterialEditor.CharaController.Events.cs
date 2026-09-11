@@ -173,7 +173,7 @@ namespace KK_Plugins.MaterialEditor
             if (CoordinateChanging) return;
             if (MakerAPI.InsideMaker) return;
 
-            ChaControl.StartCoroutine(LoadData(true, false, false));
+            RequestPreparedRestore(true, false, false);
         }
 
 #if KK || KKS
@@ -183,7 +183,7 @@ namespace KK_Plugins.MaterialEditor
             if (KKAPI.MainGame.GameAPI.InsideHScene)
                 LoadCharacterExtSaveData();
 
-            ChaControl.StartCoroutine(LoadData(true, true, false));
+            RequestPreparedRestore(true, true, false);
 
             if (MakerAPI.InsideAndLoaded)
                 MaterialEditorUI.Visible = false;
@@ -256,7 +256,7 @@ namespace KK_Plugins.MaterialEditor
                         slot);
                 }
 
-                ChaControl.StartCoroutine(LoadData(true, true, false));
+                RequestPreparedRestore(true, true, false);
             }
 
             PurgeUnusedAnimation();
@@ -315,7 +315,7 @@ namespace KK_Plugins.MaterialEditor
                 if (MaterialEditorUI.Visible && MEMaker.Instance != null)
                     MEMaker.Instance.UpdateUIAccessory();
 #else
-            ChaControl.StartCoroutine(LoadData(false, true, false));
+            RequestPreparedRestore(false, true, false);
             ChaControl.StartCoroutine(RefreshUI());
             IEnumerator RefreshUI()
             {
@@ -395,7 +395,7 @@ namespace KK_Plugins.MaterialEditor
 
             PurgeUnusedAnimation();
 
-            ChaControl.StartCoroutine(LoadData(true, true, false));
+            RequestPreparedRestore(true, true, false);
         }
 
 #if KK || KKS
@@ -530,7 +530,7 @@ namespace KK_Plugins.MaterialEditor
             if (CustomClothesOverride) return;
             if (new System.Diagnostics.StackTrace().ToString().Contains("KoiClothesOverlayController"))
             {
-                StartCoroutine(LoadData(true, false, false, false));
+                RequestPreparedRestore(true, false, false, false);
                 RefreshingTextures = true;
                 return;
             }
@@ -559,7 +559,7 @@ namespace KK_Plugins.MaterialEditor
                 RemoveRimClothes(slot);
 #elif PH
             //Reapply edits for other clothes since they will have been undone
-            ChaControl.StartCoroutine(LoadData(true, true, false));
+            RequestPreparedRestore(true, true, false);
 #endif
 
             PurgeUnusedAnimation();
@@ -598,7 +598,7 @@ namespace KK_Plugins.MaterialEditor
                 StartCoroutine(RemoveRimHairCo(slot));
 #elif PH
             //Reapply edits for other hairs since they will have been undone
-            ChaControl.StartCoroutine(LoadData(false, false, true));
+            RequestPreparedRestore(false, false, true);
 #endif
 
             PurgeUnusedAnimation();
@@ -821,7 +821,7 @@ namespace KK_Plugins.MaterialEditor
         public void RefreshBodyEdits()
         {
             if (CharacterLoading) return;
-            StartCoroutine(LoadData(false, false, false));
+            RequestPreparedRestore(false, false, false);
         }
         private struct EndOfFrameRefreshGate
         {

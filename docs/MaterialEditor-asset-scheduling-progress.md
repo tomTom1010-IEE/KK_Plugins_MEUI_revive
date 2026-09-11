@@ -51,3 +51,34 @@ The synchronous Cubemap conversion API drives the same operation to completion.
 No projection formula, sampling, panorama dimensions or source-size limit changed.
 KKS build and managed write checks passed; readable/non-readable export direction,
 color and actual frame times still require Unity/game validation.
+
+## Character cold-cache preparation
+
+Built-in character reload, coordinate and refresh callers now use an owned restore
+coroutine. Repeated requests merge their requested scopes and invalidate the older
+continuation instead of silently dropping a body/hair/clothing/accessory scope.
+Disable releases active preparation; enable resumes the pending request. Base
+controller OnEnable is still called. Deferred texture edits wait behind restoration.
+
+Before applying any property families, the owner visits each relevant Cubemap
+texture ID once, hashes its existing immutable encoded bytes on a worker, and
+prepares cache misses with the cooperative budget. Warm leases skip conversion.
+Prepared leases are transferred only after checking current storage identity and
+usage. Temporary memory contention waits rather than losing valid load records.
+Generation changes cancel old continuations and release owned preparation.
+
+The copy/name/shader/migration/property application sequence then runs in its
+original order without intervening yields. Public LoadData overloads retain the
+original non-preparing coroutine path; synchronous getters and file APIs remain
+synchronous. Invalid sources retain the old apply-time error/fallback path rather
+than deleting persisted records. Data changed during preparation may still require
+synchronous compatibility acquisition at application time.
+
+Studio item OnSceneLoad/OnObjectsCopied remain synchronous. Returning before their
+records are applied would change the host/other-plugin completion contract; this
+module does not invent a background continuation for those callbacks. Consequently
+Studio item cold-cache load stalls are explicitly NOT solved by character preparation.
+They need a separately agreed host-ready/operation-gating design and runtime checks.
+
+All seven targets compile. In-game load/copy/reset/coordinate, disable/enable and
+cross-plugin readiness checks remain required before considering this release-ready.

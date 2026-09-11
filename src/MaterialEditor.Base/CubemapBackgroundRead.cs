@@ -13,6 +13,7 @@ namespace MaterialEditorAPI
     {
         private readonly object _sync = new object();
         private readonly string _filePath;
+        private byte[] _sourceData;
         private volatile bool _cancelled;
         private volatile bool _completed;
         private byte[] _data;
@@ -65,6 +66,23 @@ namespace MaterialEditorAPI
             return operation;
         }
 
+        internal static MaterialEditorCubemapBackgroundRead BeginData(byte[] data)
+        {
+            var operation = new MaterialEditorCubemapBackgroundRead(null) { _sourceData = data };
+            try
+            {
+                if (data == null) throw new ArgumentNullException("data");
+                if (!ThreadPool.QueueUserWorkItem(operation.ReadOnWorker))
+                    throw new InvalidOperationException("Could not queue Cubemap source hashing.");
+            }
+            catch (Exception ex)
+            {
+                operation._sourceData = null;
+                operation.Complete(null, null, ex.Message);
+            }
+            return operation;
+        }
+
         internal bool TryTakeResult(
             out byte[] data,
             out MaterialEditorCubemapContentKey contentKey,
@@ -111,33 +129,20 @@ namespace MaterialEditorAPI
             string error = null;
             try
             {
-                var fileInfo = new FileInfo(_filePath);
-                if (!fileInfo.Exists)
+                data = _sourceData;
+                if (data == null)
                 {
-                    error = "The selected Cubemap source file no longer exists.";
+                    var fileInfo = new FileInfo(_filePath);
+                    if (!fileInfo.Exists)
+                        error = "The selected Cubemap source file no longer exists.";
+                    else if (MaterialEditorCubemapProjection.TryValidateSourceFileLength(fileInfo.Length, out error))
+                        data = File.ReadAllBytes(_filePath);
                 }
-                else if (!MaterialEditorCubemapProjection.TryValidateSourceFileLength(
-                             fileInfo.Length,
-                             out error))
+                if (!_cancelled && data != null)
                 {
-                    // The validation message already explains the supported limit.
-                }
-                else
-                {
-                    data = File.ReadAllBytes(_filePath);
-                    if (!MaterialEditorCubemapProjection.TryValidateSourceFileLength(
-                            data.LongLength,
-                            out error))
-                    {
+                    if (!MaterialEditorCubemapProjection.TryValidateSourceFileLength(data.LongLength, out error)
+                        || !MaterialEditorCubemapContentKey.TryCompute(data, out contentKey, out error))
                         data = null;
-                    }
-                    else if (!MaterialEditorCubemapContentKey.TryCompute(
-                                 data,
-                                 out contentKey,
-                                 out error))
-                    {
-                        data = null;
-                    }
                 }
             }
             catch (Exception exception)
@@ -148,6 +153,7 @@ namespace MaterialEditorAPI
                 contentKey = null;
             }
 
+            _sourceData = null;
             Complete(data, contentKey, error);
         }
 

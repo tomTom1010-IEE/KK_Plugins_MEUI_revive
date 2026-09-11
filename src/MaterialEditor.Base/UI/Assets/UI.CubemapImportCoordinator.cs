@@ -7,6 +7,7 @@ namespace MaterialEditorAPI
     internal enum MaterialEditorCubemapImportState
     {
         Reading,
+        WaitingForAdmission,
         Converting,
         Ready,
         Applied,
@@ -29,6 +30,7 @@ namespace MaterialEditorAPI
         private byte[] _encodedData;
         private MaterialEditorCubemapContentKey _contentKey;
         private bool _disposed;
+        private readonly bool _waitForAdmission;
 
         internal MaterialEditorCubemapImportCoordinator(string filePath)
         {
@@ -37,6 +39,23 @@ namespace MaterialEditorAPI
         }
 
         internal MaterialEditorCubemapImportState State { get; private set; }
+
+        internal MaterialEditorCubemapImportCoordinator(byte[] encodedData)
+        {
+            _waitForAdmission = true;
+            State = MaterialEditorCubemapImportState.Reading;
+            _backgroundRead = MaterialEditorCubemapBackgroundRead.BeginData(encodedData);
+        }
+
+        internal MaterialEditorCubemapLease TakePreparedLease()
+        {
+            if (_disposed || State != MaterialEditorCubemapImportState.Ready) return null;
+            var lease = _warmLease;
+            _warmLease = null;
+            _encodedData = null;
+            _contentKey = null;
+            return lease;
+        }
 
         internal string Warning { get; private set; }
 
@@ -73,43 +92,54 @@ namespace MaterialEditorAPI
 
             try
             {
-                if (State == MaterialEditorCubemapImportState.Reading)
+                if (State == MaterialEditorCubemapImportState.Reading
+                    || State == MaterialEditorCubemapImportState.WaitingForAdmission)
                 {
-                    if (!_backgroundRead.IsComplete)
-                        return;
-
-                    string readError;
-                    if (!_backgroundRead.TryTakeResult(
-                            out _encodedData,
-                            out _contentKey,
-                            out readError))
-                        return;
-
-                    _backgroundRead.Dispose();
-                    _backgroundRead = null;
-                    if (!string.IsNullOrEmpty(readError)
-                        || _encodedData == null
-                        || _contentKey == null)
+                    if (_backgroundRead != null)
                     {
-                        Fail(
-                            string.IsNullOrEmpty(readError)
-                                ? "The Cubemap source read completed without data."
-                                : readError);
-                        return;
+                        if (!_backgroundRead.IsComplete)
+                            return;
+
+                        string readError;
+                        if (!_backgroundRead.TryTakeResult(
+                                out _encodedData,
+                                out _contentKey,
+                                out readError))
+                            return;
+
+                        _backgroundRead.Dispose();
+                        _backgroundRead = null;
+                        if (!string.IsNullOrEmpty(readError)
+                            || _encodedData == null
+                            || _contentKey == null)
+                        {
+                            Fail(
+                                string.IsNullOrEmpty(readError)
+                                    ? "The Cubemap source read completed without data."
+                                    : readError);
+                            return;
+                        }
                     }
 
                     MaterialEditorCubemapLease cacheHit;
                     MaterialEditorCubemapAcquireOperation acquire;
                     string warning;
                     string error;
+                    bool waiting;
                     if (!MaterialEditorCubemapCache.TryBeginAcquire(
                             _encodedData,
                             _contentKey,
                             out cacheHit,
                             out acquire,
                             out warning,
-                            out error))
+                            out error,
+                            out waiting))
                     {
+                        if (waiting && _waitForAdmission)
+                        {
+                            State = MaterialEditorCubemapImportState.WaitingForAdmission;
+                            return;
+                        }
                         Fail(error);
                         return;
                     }

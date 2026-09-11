@@ -27,6 +27,13 @@ static class Program
         {
             var bytes = new byte[] { 3, 1, 4, 1, 5 };
             File.WriteAllBytes(path, bytes);
+            using (var hash = MaterialEditorCubemapBackgroundRead.BeginData(bytes))
+            {
+                Until(() => hash.IsComplete);
+                Check(hash.TryTakeResult(out var source, out var key, out var error)
+                    && error == null && ReferenceEquals(source, bytes) && key.Matches(bytes), "Restore hash identity");
+                Check(hash.WorkerThreadId != Environment.CurrentManagedThreadId, "Hash must run on a worker");
+            }
             using (var write = MaterialAssetFileWrite.Begin(path, new byte[] { 9, 8 }, null))
             {
                 Until(() => write.IsComplete);
@@ -109,4 +116,9 @@ namespace MaterialEditorAPI
     public sealed class TestLogger { public void LogWarning(object value) { } }
     public static class MaterialEditorPluginBase { public static TestLogger Logger = new TestLogger(); }
     public static class Names { public static string NameFormatted(this UnityEngine.Material value) => "material"; }
+    public static class MaterialEditorCubemapProjection
+    {
+        public static bool TryValidateSourceFileLength(long length, out string error)
+        { error = null; return length > 0; }
+    }
 }

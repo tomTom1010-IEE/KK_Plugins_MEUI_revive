@@ -116,7 +116,7 @@ namespace KK_Plugins.MaterialEditor
                 MaterialEditorUI.Visible = false;
             ReleaseUiForCharacterContentsReplacement();
 
-            ChaControl.StartCoroutine(LoadData(true, true, false));
+            RequestPreparedRestore(true, true, false);
             base.OnCoordinateBeingLoaded(coordinate, maintainState);
         }
 
@@ -245,6 +245,12 @@ namespace KK_Plugins.MaterialEditor
         /// <summary></summary>
         public IEnumerator LoadData(bool clothes, bool accessories, bool hair, bool body)
         {
+            return LoadDataCore(clothes, accessories, hair, body, false);
+        }
+
+        private IEnumerator LoadDataCore(bool clothes, bool accessories, bool hair, bool body, bool prepareCubemaps)
+        {
+            var generation = _restoreGeneration;
             yield return null;
 #if !EC
             if (KKAPI.Studio.StudioAPI.InsideStudio)
@@ -256,14 +262,24 @@ namespace KK_Plugins.MaterialEditor
             while (ChaControl == null || ChaControl.GetHead() == null)
                 yield return null;
 
+            var scope = new CharacterRestoreScope(clothes, accessories, hair, body);
+            if (prepareCubemaps)
+            {
+                var preparation = PrepareRestoreCubemaps(scope, generation);
+                try
+                {
+                    while (preparation.MoveNext()) yield return preparation.Current;
+                }
+                finally { (preparation as System.IDisposable)?.Dispose(); }
+                if (generation != _restoreGeneration || this == null) yield break;
+            }
+
             if (body)
                 CorrectTongue();
 #if KK || KKS
             if (KKAPI.Studio.StudioAPI.InsideStudio && body)
                 CorrectFace();
 #endif
-
-            var scope = new CharacterRestoreScope(clothes, accessories, hair, body);
 
             //Instantiate all material copies before applying any edits to ensure edits are applied to copies
             RestoreMaterialCopyList(scope);
@@ -289,6 +305,7 @@ namespace KK_Plugins.MaterialEditor
             if (MaterialEditorPlugin.RimRemover.Value)
                 RemoveRim();
 #endif
+            if (prepareCubemaps) CompletePreparedRestore(generation);
         }
 
         /// <summary>

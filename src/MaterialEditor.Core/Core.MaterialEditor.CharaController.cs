@@ -133,6 +133,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="maintainState"></param>
         protected override void OnReload(GameMode currentGameMode, bool maintainState)
         {
+            CancelRestorePreparations();
             _textureImports.CancelAll();
             if (!maintainState)
             {
@@ -145,7 +146,7 @@ namespace KK_Plugins.MaterialEditor
                 LoadCharacterExtSaveData();
             }
 
-            ChaControl.StartCoroutine(LoadData(true, true, true));
+            RequestPreparedRestore(true, true, true);
         }
 
         /// <summary>
@@ -153,6 +154,8 @@ namespace KK_Plugins.MaterialEditor
         /// </summary>
         protected override void OnDestroy()
         {
+            _restorePending = false;
+            CancelRestorePreparations();
             _textureImports.Dispose();
             ChaControl targetControl = null;
             GameObject targetRoot = null;
@@ -208,7 +211,8 @@ namespace KK_Plugins.MaterialEditor
 
         internal new void Update()
         {
-            SetMaterialTextureFromFileByUpdate();
+            ResumePreparedRestore();
+            if (!_restorePending) SetMaterialTextureFromFileByUpdate();
             MEAnimationController.UpdateAnimations(AnimationControllerMap);
             base.Update();
             if (MaterialEditorPlugin.PurgeOrphanedPropertiesHotkey.Value.IsDown())
@@ -344,7 +348,11 @@ namespace KK_Plugins.MaterialEditor
             get => coordinateChanging;
             set
             {
-                if (value) _textureImports.CancelAll();
+                if (value)
+                {
+                    _textureImports.CancelAll();
+                    CancelRestorePreparations();
+                }
                 coordinateChanging = value;
                 ChaControl.StartCoroutine(Reset());
                 IEnumerator Reset()
