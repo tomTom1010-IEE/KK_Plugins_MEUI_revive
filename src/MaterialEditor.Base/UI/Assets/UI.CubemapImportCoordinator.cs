@@ -260,6 +260,7 @@ namespace MaterialEditorAPI
     {
         private MaterialEditorCubemapImportCoordinator _coordinator;
         private Coroutine _coroutine;
+        private Action<MaterialEditResult> _completed;
 
         internal void Begin(
             string filePath,
@@ -268,16 +269,17 @@ namespace MaterialEditorAPI
                 byte[],
                 MaterialEditorCubemapContentKey,
                 MaterialEditorCubemapLease,
-                bool> apply,
+                MaterialEditResult> apply,
             Action<string> logInfo,
             Action<string> logWarning,
             Action<string> logError,
-            Action<bool> completed)
+            Action<MaterialEditResult> completed)
         {
             if (_coordinator != null)
                 throw new InvalidOperationException(
                     "This Cubemap import runner is already in use.");
 
+            _completed = completed;
             _coordinator = new MaterialEditorCubemapImportCoordinator(filePath);
             _coroutine = StartCoroutine(
                 Run(
@@ -295,13 +297,14 @@ namespace MaterialEditorAPI
                 byte[],
                 MaterialEditorCubemapContentKey,
                 MaterialEditorCubemapLease,
-                bool> apply,
+                MaterialEditResult> apply,
             Action<string> logInfo,
             Action<string> logWarning,
             Action<string> logError,
-            Action<bool> completed)
+            Action<MaterialEditResult> completed)
         {
             var success = false;
+            var result = new MaterialEditResult(MaterialEditStatus.Cancelled, "Target lifecycle");
             var previousState = _coordinator.State;
             SafeInvoke(
                 logInfo,
@@ -349,19 +352,23 @@ namespace MaterialEditorAPI
             {
                 if (!string.IsNullOrEmpty(_coordinator.Warning))
                     SafeInvoke(logWarning, _coordinator.Warning);
-                success = _coordinator.TryApply(apply);
+                success = _coordinator.TryApply((bytes, key, lease) =>
+                {
+                    result = apply(bytes, key, lease);
+                    return result.Succeeded || result.Status == MaterialEditStatus.Unverified;
+                });
             }
 
             if (_coordinator.State == MaterialEditorCubemapImportState.Failed)
                 SafeInvoke(logError, _coordinator.Error);
-            else if (success)
+            else if (result.Succeeded)
                 SafeInvoke(logInfo, "Cubemap import completed.");
-            if (_coordinator.State != MaterialEditorCubemapImportState.Cancelled)
-                SafeInvoke(completed, success);
-
+            if (_coordinator.State == MaterialEditorCubemapImportState.Failed)
+                result = new MaterialEditResult(MaterialEditStatus.Failed, "Cubemap import", _coordinator.Error);
             _coordinator.Dispose();
             _coordinator = null;
             _coroutine = null;
+            Complete(result);
             Destroy(this);
         }
 
@@ -392,27 +399,30 @@ namespace MaterialEditorAPI
             }
         }
 
-        private static void SafeInvoke(Action<bool> callback, bool value)
+        private void Complete(MaterialEditResult result)
         {
-            if (callback == null)
-                return;
-            try
-            {
-                callback(value);
-            }
-            catch
-            {
-            }
+            var callback = _completed;
+            _completed = null;
+            try { callback?.Invoke(result); }
+            catch (Exception ex) { MaterialEditorPluginBase.Logger?.LogWarning(ex); }
         }
 
+        internal void Cancel()
+        {
+            if (_coroutine != null) StopCoroutine(_coroutine);
+            _coroutine = null;
+            _coordinator?.Dispose();
+            _coordinator = null;
+            Complete(new MaterialEditResult(MaterialEditStatus.Cancelled, "Runner lifecycle"));
+            Destroy(this);
+        }
+
+        private void OnDisable() => Cancel();
         private void OnDestroy()
         {
-            if (_coroutine != null)
-                StopCoroutine(_coroutine);
-            _coroutine = null;
-            if (_coordinator != null)
-                _coordinator.Dispose();
+            _coordinator?.Dispose();
             _coordinator = null;
+            Complete(new MaterialEditResult(MaterialEditStatus.Cancelled, "Runner destroyed"));
         }
     }
 }

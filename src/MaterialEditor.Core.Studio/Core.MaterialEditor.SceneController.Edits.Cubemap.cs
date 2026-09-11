@@ -49,6 +49,7 @@ namespace KK_Plugins.MaterialEditor
             string propertyName,
             byte[] data)
         {
+            MaterialEditRequestQueue.CancelTarget(GetObjectByID(id), material == null ? null : material.NameFormatted(), propertyName);
             SetMaterialCubemap(id, material, propertyName, data, null, false);
         }
 
@@ -323,6 +324,7 @@ namespace KK_Plugins.MaterialEditor
             Material material,
             string propertyName)
         {
+            MaterialEditRequestQueue.CancelTarget(GetObjectByID(id), material == null ? null : material.NameFormatted(), propertyName);
             var cubemapProperty = MaterialCubemapPropertyList.FirstOrDefault(x =>
                 x.ID == id
                 && x.MaterialName == material.NameFormatted()

@@ -36,31 +36,25 @@ namespace KK_Plugins.MaterialEditor
             }
             else
             {
+                MaterialEditRequestQueue.CancelTarget(GetObjectByID(id), material == null ? null : material.NameFormatted(), propertyName);
                 TrySetMaterialTextureFromFile(id, material, propertyName, filePath);
             }
         }
 
-        internal void QueueMaterialTextureFromFile(
+        internal Action QueueMaterialTextureFromFile(
             int id,
             Material material,
             string propertyName,
             string filePath,
-            Action<bool> completed)
+            Action<MaterialEditResult> completed)
         {
-            if (!File.Exists(filePath))
-            {
-                completed?.Invoke(false);
-                return;
-            }
-
-            if (FileToSet != null)
-                TextureImportCompleted?.Invoke(false);
-
-            FileToSet = filePath;
-            PropertyToSet = propertyName;
-            MatToSet = material;
-            IDToSet = id;
-            TextureImportCompleted = completed;
+            var go = GetObjectByID(id);
+            var target = new MaterialEditTarget(go, material, propertyName);
+            return _textureImports.Enqueue(target,
+                () => this != null && GetObjectByID(id) == go && File.Exists(filePath),
+                done => { done(MaterialEditResult.FromApplied(
+                    TrySetMaterialTextureFromFile(id, material, propertyName, filePath))); return null; },
+                completed);
         }
 
         private bool TrySetMaterialTextureFromFile(
@@ -127,6 +121,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="data">Byte array containing the texture data</param>
         public void SetMaterialTexture(int id, Material material, string propertyName, byte[] data)
         {
+            MaterialEditRequestQueue.CancelTarget(GetObjectByID(id), material == null ? null : material.NameFormatted(), propertyName);
             TrySetMaterialTexture(id, material, propertyName, data);
         }
 
@@ -242,6 +237,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="displayMessage">Whether to display a message on screen telling the user to save and reload to refresh textures</param>
         public void RemoveMaterialTexture(int id, Material material, string propertyName, bool displayMessage = true)
         {
+            MaterialEditRequestQueue.CancelTarget(GetObjectByID(id), material == null ? null : material.NameFormatted(), propertyName);
             var textureProperty = MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName);
             if (textureProperty != null)
             {
@@ -427,6 +423,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="setProperty">Whether to also apply the value to the materials</param>
         public void SetMaterialShader(int id, Material material, string shaderName, bool setProperty = true)
         {
+            MaterialEditRequestQueue.CancelTarget(GetObjectByID(id), material == null ? null : material.NameFormatted());
             GameObject gameObject = GetObjectByID(id);
             var materialProperty = MaterialShaderList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted());
             if (materialProperty == null)
@@ -476,6 +473,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="setProperty">Whether to also apply the value to the materials</param>
         public void RemoveMaterialShader(int id, Material material, bool setProperty = true)
         {
+            MaterialEditRequestQueue.CancelTarget(GetObjectByID(id), material == null ? null : material.NameFormatted());
             GameObject gameObject = GetObjectByID(id);
             if (setProperty)
             {

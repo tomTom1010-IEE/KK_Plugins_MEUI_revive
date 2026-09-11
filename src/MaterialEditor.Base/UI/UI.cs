@@ -665,6 +665,12 @@ namespace MaterialEditorAPI
 
         private void CloseTargetColorPalette() =>
             TargetLifecycle.CloseTargetColorPalette();
+        internal void CancelAssetImportsForLifecycle()
+        {
+            _assetWorkflow?.Dispose();
+            _assetWorkflow = null;
+        }
+
         internal void ShutdownMaterialEditorUi()
         {
             if (!ReferenceEquals(ActiveUi, this))
