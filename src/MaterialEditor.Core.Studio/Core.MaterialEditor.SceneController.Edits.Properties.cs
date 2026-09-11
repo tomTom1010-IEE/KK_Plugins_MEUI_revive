@@ -26,7 +26,7 @@ namespace KK_Plugins.MaterialEditor
         public void SetMaterialFloatProperty(int id, Material material, string propertyName, float value, bool setProperty = true)
         {
             GameObject go = GetObjectByID(id);
-            var materialProperty = MaterialFloatPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted());
+            var materialProperty = FloatPropertyQuery.First(MaterialFloatPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (materialProperty == null)
             {
                 float valueOriginal = material.GetFloat($"_{propertyName}");
@@ -52,7 +52,7 @@ namespace KK_Plugins.MaterialEditor
         /// <returns>Saved material property value or null if none is saved</returns>
         public float? GetMaterialFloatPropertyValue(int id, Material material, string propertyName)
         {
-            var value = MaterialFloatPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted())?.Value;
+            var value = FloatPropertyQuery.First(MaterialFloatPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.Value;
             if (value.IsNullOrEmpty())
                 return null;
             float parsedValue;
@@ -69,7 +69,7 @@ namespace KK_Plugins.MaterialEditor
         /// <returns>Saved material property's original value or null if none is saved</returns>
         public float? GetMaterialFloatPropertyValueOriginal(int id, Material material, string propertyName)
         {
-            var valueOriginal = MaterialFloatPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted())?.ValueOriginal;
+            var valueOriginal = FloatPropertyQuery.First(MaterialFloatPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.ValueOriginal;
             if (valueOriginal.IsNullOrEmpty())
                 return null;
             float parsedValue;
@@ -94,7 +94,7 @@ namespace KK_Plugins.MaterialEditor
                     SetFloat(go, material.NameFormatted(), propertyName, (float)original);
             }
 
-            MaterialFloatPropertyList.RemoveAll(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted());
+            FloatPropertyQuery.RemoveAll(MaterialFloatPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
         }
         /// <summary>
         /// Add a keyword property to be saved and loaded with the scene and optionally also update the materials.
@@ -107,7 +107,7 @@ namespace KK_Plugins.MaterialEditor
         public void SetMaterialKeywordProperty(int id, Material material, string propertyName, bool value, bool setProperty = true)
         {
             GameObject go = GetObjectByID(id);
-            var materialProperty = MaterialKeywordPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted());
+            var materialProperty = KeywordPropertyQuery.First(MaterialKeywordPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (materialProperty == null)
             {
                 bool valueOriginal = material.IsKeywordEnabled($"_{propertyName}");
@@ -133,7 +133,7 @@ namespace KK_Plugins.MaterialEditor
         /// <returns>Saved renderer property's original value</returns>
         public bool? GetMaterialKeywordPropertyValue(int id, Material material, string propertyName)
         {
-            return MaterialKeywordPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted())?.Value;
+            return KeywordPropertyQuery.First(MaterialKeywordPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.Value;
         }
         /// <summary>
         /// Get the saved material property's original value or null if none is saved
@@ -144,7 +144,7 @@ namespace KK_Plugins.MaterialEditor
         /// <returns>Saved material property's original value or null if none is saved</returns>
         public bool? GetMaterialKeywordPropertyValueOriginal(int id, Material material, string propertyName)
         {
-            return MaterialKeywordPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted())?.ValueOriginal;
+            return KeywordPropertyQuery.First(MaterialKeywordPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.ValueOriginal;
         }
         /// <summary>
         /// Remove the saved material property value if one is saved and optionally also update the materials
@@ -163,7 +163,7 @@ namespace KK_Plugins.MaterialEditor
                     SetKeyword(go, material.NameFormatted(), propertyName, (bool)original);
             }
 
-            MaterialKeywordPropertyList.RemoveAll(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted());
+            KeywordPropertyQuery.RemoveAll(MaterialKeywordPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
         }
         /// <summary>
         /// Add a color property to be saved and loaded with the scene and optionally also update the materials.
@@ -176,7 +176,7 @@ namespace KK_Plugins.MaterialEditor
         public void SetMaterialColorProperty(int id, Material material, string propertyName, Color value, bool setProperty = true)
         {
             GameObject go = GetObjectByID(id);
-            var colorProperty = MaterialColorPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted());
+            var colorProperty = ColorPropertyQuery.First(MaterialColorPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (colorProperty == null)
             {
                 Color valueOriginal = material.GetColor($"_{propertyName}");
@@ -201,7 +201,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <returns>Saved material property value or null if none is saved</returns>
         public Color? GetMaterialColorPropertyValue(int id, Material material, string propertyName) =>
-            MaterialColorPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted())?.Value;
+            ColorPropertyQuery.First(MaterialColorPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.Value;
         /// <summary>
         /// Get the saved material property's original value or null if none is saved
         /// </summary>
@@ -210,7 +210,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <returns>Saved material property's original value or null if none is saved</returns>
         public Color? GetMaterialColorPropertyValueOriginal(int id, Material material, string propertyName) =>
-            MaterialColorPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted())?.ValueOriginal;
+            ColorPropertyQuery.First(MaterialColorPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.ValueOriginal;
         /// <summary>
         /// Remove the saved material property value if one is saved and optionally also update the materials
         /// </summary>
@@ -228,7 +228,7 @@ namespace KK_Plugins.MaterialEditor
                     SetColor(go, material.NameFormatted(), propertyName, (Color)original);
             }
 
-            MaterialColorPropertyList.RemoveAll(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted());
+            ColorPropertyQuery.RemoveAll(MaterialColorPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
         }
 
         /// <summary>
@@ -281,8 +281,8 @@ namespace KK_Plugins.MaterialEditor
                     SetVector(go, material.NameFormatted(), propertyName, original.Value);
             }
 
-            MaterialVectorPropertyList.RemoveAll(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted());
-            MaterialColorPropertyList.RemoveAll(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted() && IsVectorProperty(go, x.MaterialName, x.Property));
+            VectorPropertyQuery.RemoveAll(MaterialVectorPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
+            ColorPropertyQuery.RemoveAll(MaterialColorPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName), x => IsVectorProperty(go, x.MaterialName, x.Property));
         }
 
         /// <summary>
@@ -291,11 +291,11 @@ namespace KK_Plugins.MaterialEditor
         /// </summary>
         private MaterialVectorProperty MigrateLegacyMaterialVectorProperty(int id, string materialName, string propertyName, GameObject go)
         {
-            var vectorProperty = MaterialVectorPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == materialName);
+            var vectorProperty = VectorPropertyQuery.First(MaterialVectorPropertyList, new MaterialPropertyRecordKey(-1, 0, id, materialName, propertyName));
             if (!IsVectorProperty(go, materialName, propertyName))
                 return vectorProperty;
 
-            var legacyColorProperty = MaterialColorPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == materialName);
+            var legacyColorProperty = ColorPropertyQuery.First(MaterialColorPropertyList, new MaterialPropertyRecordKey(-1, 0, id, materialName, propertyName));
             if (vectorProperty != null)
             {
                 if (legacyColorProperty != null)

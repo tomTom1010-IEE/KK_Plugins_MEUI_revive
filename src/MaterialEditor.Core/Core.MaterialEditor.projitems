@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Persistence\MaterialEditRecordSerialization.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Persistence\MaterialTextureDataStore.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.CharaController.Queries.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.CharaController.Restore.Properties.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.CharaController.Restore.Textures.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Persistence\MaterialEditLoadContext.cs" />
