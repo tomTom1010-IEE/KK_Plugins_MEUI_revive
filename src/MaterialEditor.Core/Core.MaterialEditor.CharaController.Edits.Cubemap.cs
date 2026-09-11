@@ -55,6 +55,7 @@ namespace KK_Plugins.MaterialEditor
             byte[] data,
             GameObject go)
         {
+            MaterialEditRequestQueue.CancelTarget(go, material == null ? null : material.NameFormatted(), propertyName);
             SetMaterialCubemap(
                 slot,
                 objectType,
@@ -338,6 +339,7 @@ namespace KK_Plugins.MaterialEditor
             GameObject go,
             bool setProperty = true)
         {
+            MaterialEditRequestQueue.CancelTarget(go, material == null ? null : material.NameFormatted(), propertyName);
             var cubemapProperty = FindMaterialCubemapProperty(
                 slot,
                 objectType,

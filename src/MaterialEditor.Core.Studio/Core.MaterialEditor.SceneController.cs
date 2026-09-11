@@ -51,11 +51,7 @@ namespace KK_Plugins.MaterialEditor
         private static readonly MaterialEditorCubemapLeaseStore CubemapLeases =
             new MaterialEditorCubemapLeaseStore();
 
-        private static string FileToSet;
-        private static string PropertyToSet;
-        private static Material MatToSet;
-        private static int IDToSet;
-        private static Action<bool> TextureImportCompleted;
+        private readonly MaterialEditRequestQueue _textureImports = new MaterialEditRequestQueue();
 
         private Dictionary<string, object> AAAAAA;
         private Dictionary<string, object> BBBBBB;
@@ -64,6 +60,8 @@ namespace KK_Plugins.MaterialEditor
         {
             InitAnimationController();
         }
+
+        private void OnDisable() => _textureImports.CancelAll();
 
         /// <summary>
         /// Saves data
@@ -234,6 +232,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="loadedItems"></param>
         protected override void OnSceneLoad(SceneOperationKind operation, ReadOnlyDictionary<int, ObjectCtrlInfo> loadedItems)
         {
+            _textureImports.CancelAll();
             if (operation == SceneOperationKind.Clear
                 || operation == SceneOperationKind.Load)
             {
@@ -773,32 +772,7 @@ namespace KK_Plugins.MaterialEditor
                 if (count > 0)
                     MaterialEditorPlugin.Logger.LogMessage($"Reset ReceiveShadows for {count} items");
             }
-            if (FileToSet != null)
-            {
-                bool succeeded = false;
-                var completed = TextureImportCompleted;
-                try
-                {
-                    if (!FileToSet.IsNullOrEmpty())
-                        succeeded = TrySetMaterialTextureFromFile(
-                            IDToSet,
-                            MatToSet,
-                            PropertyToSet,
-                            FileToSet);
-                }
-                catch
-                {
-                    //MaterialEditorPlugin.Logger.Log(BepInEx.Logging.LogLevel.Error | BepInEx.Logging.LogLevel.Message, "Failed to load texture.");
-                }
-                finally
-                {
-                    FileToSet = null;
-                    PropertyToSet = null;
-                    MatToSet = null;
-                    TextureImportCompleted = null;
-                    completed?.Invoke(succeeded);
-                }
-            }
+            _textureImports.Pump();
 
             MEAnimationController.UpdateAnimations(AnimationControllerMap);
         }

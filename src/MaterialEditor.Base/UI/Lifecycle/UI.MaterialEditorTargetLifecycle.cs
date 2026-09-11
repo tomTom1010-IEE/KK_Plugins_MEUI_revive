@@ -35,8 +35,8 @@ namespace MaterialEditorAPI
             if (ReferenceEquals(host, null))
                 return;
 
+            host.CancelAssetImportsForLifecycle();
             host.CancelPendingRefreshesForLifecycle();
-            MaterialEditorUI.DisposeTexChangeWatcher();
             host.LifecycleVirtualList?.ReleaseContent();
             host.LifecycleSelectionController?.ReleaseTransientContent();
             host.LifecycleWindowView?.ReleasePresentation();

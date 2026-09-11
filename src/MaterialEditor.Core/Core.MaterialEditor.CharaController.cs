@@ -71,13 +71,7 @@ namespace KK_Plugins.MaterialEditor
 #else
         public int CurrentCoordinateIndex => 0;
 #endif
-        private string FileToSet;
-        private string PropertyToSet;
-        private Material MatToSet;
-        private int SlotToSet;
-        private ObjectType ObjectTypeToSet;
-        private GameObject GameObjectToSet;
-        private Action<bool> TextureImportCompleted;
+        private readonly MaterialEditRequestQueue _textureImports = new MaterialEditRequestQueue();
         internal int? DuplicatingFrom = null;
 
         /// <summary>
@@ -172,6 +166,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="maintainState"></param>
         protected override void OnReload(GameMode currentGameMode, bool maintainState)
         {
+            _textureImports.CancelAll();
             if (!maintainState)
             {
                 if (MakerAPI.InsideAndLoaded)
@@ -191,6 +186,7 @@ namespace KK_Plugins.MaterialEditor
         /// </summary>
         protected override void OnDestroy()
         {
+            _textureImports.Dispose();
             ChaControl targetControl = null;
             GameObject targetRoot = null;
             try
@@ -358,37 +354,7 @@ namespace KK_Plugins.MaterialEditor
         /// <summary>
         /// Used by SetMaterialTextureFromFile if setTexInUpdate is true, needed for loading files via file dialogue
         /// </summary>
-        private void SetMaterialTextureFromFileByUpdate()
-        {
-            if (FileToSet == null)
-                return;
-
-            bool succeeded = false;
-            var completed = TextureImportCompleted;
-            try
-            {
-                succeeded = TrySetMaterialTextureFromFile(
-                    SlotToSet,
-                    ObjectTypeToSet,
-                    MatToSet,
-                    PropertyToSet,
-                    FileToSet,
-                    GameObjectToSet);
-            }
-            catch
-            {
-                //MaterialEditorPlugin.Logger.Log(BepInEx.Logging.LogLevel.Error | BepInEx.Logging.LogLevel.Message, "Failed to load texture.");
-            }
-            finally
-            {
-                FileToSet = null;
-                PropertyToSet = null;
-                MatToSet = null;
-                GameObjectToSet = null;
-                TextureImportCompleted = null;
-                completed?.Invoke(succeeded);
-            }
-        }
+        private void SetMaterialTextureFromFileByUpdate() => _textureImports.Pump();
 
         /// <summary>
         /// Get the coordinate index based on object type, hair and character return 0, clothes and accessories return CurrentCoordinateIndex
@@ -411,6 +377,7 @@ namespace KK_Plugins.MaterialEditor
             get => coordinateChanging;
             set
             {
+                if (value) _textureImports.CancelAll();
                 coordinateChanging = value;
                 ChaControl.StartCoroutine(Reset());
                 IEnumerator Reset()
