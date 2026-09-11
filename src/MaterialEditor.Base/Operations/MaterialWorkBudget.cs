@@ -26,7 +26,8 @@ namespace MaterialEditorAPI
 
         internal bool TryStartUnit()
         {
-            if (_units >= _limit || (_units != 0 && Stopwatch.GetTimestamp() - _started >= _ticks))
+            if (_units >= _limit || (_units != 0 && (Stopwatch.GetTimestamp() - _started >= _ticks
+                || MaterialFrameWorkScheduler.BudgetExhausted)))
                 return false;
             _units++;
             return true;

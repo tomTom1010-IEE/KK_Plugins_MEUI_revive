@@ -53,7 +53,7 @@ namespace MaterialEditorAPI
                             "Export write", error));
                         return;
                     }
-                    if (!operation.Advance(out error))
+                    if (!operation.AdvanceScheduled(out error))
                     {
                         finish(new MaterialEditResult(MaterialEditStatus.Failed, operation.Stage, error));
                         return;

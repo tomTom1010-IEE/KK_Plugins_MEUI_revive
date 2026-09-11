@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../src/MaterialEditor.Base/Operations/MaterialFrameWorkScheduler.cs" Link="MaterialFrameWorkScheduler.cs" />
     <Compile Include="../../src/MaterialEditor.Base/CubemapBackgroundRead.cs" Link="CubemapBackgroundRead.cs" />
     <Compile Include="../../src/MaterialEditor.Base/CubemapContentKey.cs" Link="CubemapContentKey.cs" />
     <Compile Include="../../src/MaterialEditor.Base/Operations/MaterialAssetFileWrite.cs" Link="MaterialAssetFileWrite.cs" />

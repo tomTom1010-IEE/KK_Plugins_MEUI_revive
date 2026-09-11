@@ -55,9 +55,10 @@ color and actual frame times still require Unity/game validation.
 ## Character cold-cache preparation
 
 Built-in character reload, coordinate and refresh callers now use an owned restore
-coroutine. Repeated requests merge their requested scopes and invalidate the older
-continuation instead of silently dropping a body/hair/clothing/accessory scope.
-Disable releases active preparation; enable resumes the pending request. Base
+coroutine. Repeated requests merge their scopes and request a follow-up pass without
+restarting valid conversion work. Reload, coordinate changes and disable still
+invalidate the older continuation. Disable also cancels owned texture imports,
+releasing their shared reader admission; enable resumes pending restoration. Base
 controller OnEnable is still called. Deferred texture edits wait behind restoration.
 
 Before applying any property families, the owner visits each relevant Cubemap
@@ -82,3 +83,22 @@ They need a separately agreed host-ready/operation-gating design and runtime che
 
 All seven targets compile. In-game load/copy/reset/coordinate, disable/enable and
 cross-plugin readiness checks remain required before considering this release-ready.
+
+## Engineering audit follow-up
+
+- Queue advancement keeps a stable request reference across reentrant disposal and
+  contains cancellation exceptions. Terminal notifications remain exactly once.
+- Invalidation covers overlapping ancestor/descendant apply scopes with matching
+  material/property names. Unrelated object roots remain isolated; watcher
+  coalescing deliberately retains exact-root matching.
+- Asynchronous Cubemap import, character preparation and export share a 2 ms
+  cooperative frame budget. Waiting operations retain FIFO priority, cancelled
+  owners release their ticket, and owners that stop polling expire. Row loops
+  check the shared elapsed budget between units. This is not a hard frame-time
+  guarantee: a single Unity call or row can exceed the budget.
+- The resource coordinator now lives in Operations; its MonoBehaviour runner
+  remains in UI/Assets. Synchronous conversion/export APIs bypass scheduler
+  admission and preserve their completion contract.
+- Managed regressions cover reentrant disposal, overlapping scopes, isolated
+  roots, shared frame admission and waiting-owner priority. Real game lifecycle,
+  continuous refresh and multi-character fairness still require runtime checks.

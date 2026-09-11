@@ -17,6 +17,19 @@ static class Program
 
     static void Main()
     {
+        var ownerA = new object();
+        var ownerB = new object();
+        using (var slice = MaterialFrameWorkScheduler.TryEnter(ownerA))
+        {
+            Check(slice != null, "First owner admitted");
+            Thread.Sleep(5);
+            Check(MaterialFrameWorkScheduler.BudgetExhausted, "Shared elapsed budget");
+        }
+        Check(MaterialFrameWorkScheduler.TryEnter(ownerB) == null, "Second owner waits for frame budget");
+        UnityEngine.Time.frameCount++;
+        Check(MaterialFrameWorkScheduler.TryEnter(ownerA) == null, "Waiting owner has FIFO priority");
+        using (var slice = MaterialFrameWorkScheduler.TryEnter(ownerB)) Check(slice != null, "Waiting owner progresses next frame");
+        MaterialFrameWorkScheduler.Release(ownerA);
         var budget = new MaterialWorkBudget(10000, 2);
         Check(budget.TryStartUnit() && budget.TryStartUnit() && !budget.TryStartUnit(), "Work-unit cap");
         budget = new MaterialWorkBudget(0.000001, 10);
@@ -62,6 +75,17 @@ static class Program
             var material = new UnityEngine.Material();
             var target = new MaterialEditTarget(root, material, "Tex");
             var mainThread = Environment.CurrentManagedThreadId;
+            using (var disabledOwner = new MaterialEditRequestQueue())
+            {
+                disabledOwner.EnqueueFile(target, () => true, path, data => true, r => { });
+                disabledOwner.Pump();
+                using (var followingReader = MaterialAssetFileRead.Begin(path))
+                {
+                    disabledOwner.CancelAll();
+                    Until(() => followingReader.IsComplete);
+                    Check(followingReader.Data.SequenceEqual(bytes), "Disabled owner releases shared read admission without another pump");
+                }
+            }
             var child = new UnityEngine.GameObject();
             child.transform.parent = root.transform;
             var childTarget = new MaterialEditTarget(child, material, "Tex");
@@ -123,6 +147,7 @@ static class Program
 
 namespace UnityEngine
 {
+    public static class Time { public static int frameCount; }
     public class GameObject { public Transform transform = new Transform(); }
     public class Transform
     {

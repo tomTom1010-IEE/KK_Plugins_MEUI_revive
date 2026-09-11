@@ -91,6 +91,13 @@ namespace MaterialEditorAPI
                 catch (Exception ex) { error = "Cubemap export failed: " + ex.Message; return false; }
             }
 
+            internal bool AdvanceScheduled(out string error)
+            {
+                error = null;
+                using (var slice = MaterialFrameWorkScheduler.TryEnter(this))
+                    return slice == null || Advance(out error);
+            }
+
             private void ProjectRow(int width, int height)
             {
                 var panoramaV = (_row + 0.5) / height;
@@ -127,6 +134,7 @@ namespace MaterialEditorAPI
             {
                 if (_disposed) return;
                 _disposed = true;
+                MaterialFrameWorkScheduler.Release(this);
                 _source = null;
                 _faces = null;
                 _output = null;
