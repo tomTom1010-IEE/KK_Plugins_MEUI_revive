@@ -6,6 +6,19 @@ namespace MaterialEditorAPI
 {
     internal static class MaterialEditorSelectionStyles
     {
+        // Selected tint exists in newer Unity UI versions, but not all supported
+        // games. Resolve once to keep the shared source compatible with both.
+        private static readonly System.Reflection.PropertyInfo SelectedColorProperty =
+            typeof(ColorBlock).GetProperty("selectedColor");
+
+        private static void PreserveHeaderFocusColor(ref ColorBlock colors)
+        {
+            if (SelectedColorProperty == null || !SelectedColorProperty.CanWrite) return;
+            object boxed = colors;
+            SelectedColorProperty.SetValue(boxed, colors.normalColor, null);
+            colors = (ColorBlock)boxed;
+        }
+
         internal static void ApplyButton(Button button)
         {
             if (button == null)
@@ -82,6 +95,7 @@ namespace MaterialEditorAPI
             colors.normalColor = expanded
                 ? MaterialEditorTheme.Colors.CategoryHeaderExpanded
                 : MaterialEditorTheme.Colors.CategoryRow;
+            PreserveHeaderFocusColor(ref colors);
             button.colors = colors;
             ApplyPropertyCategoryTypography(button);
             MaterialEditorScrollSelectableStyles.SynchronizeCurrentState(button);
@@ -118,6 +132,7 @@ namespace MaterialEditorAPI
             colors.normalColor = expanded
                 ? MaterialEditorTheme.Colors.SubcategoryHeaderExpanded
                 : MaterialEditorTheme.Colors.SubcategoryRow;
+            PreserveHeaderFocusColor(ref colors);
             button.colors = colors;
             MaterialEditorScrollSelectableStyles.SynchronizeCurrentState(button);
         }
@@ -532,6 +547,9 @@ namespace MaterialEditorAPI
                 : colors.disabledColor;
             var graphic = selectable.targetGraphic;
             graphic.color = MaterialEditorTheme.Colors.TintIdentity;
+            // SetColor alone leaves a previous Selectable tween alive, allowing
+            // it to overwrite the freshly rebound semantic tint on a later tick.
+            graphic.CrossFadeColor(effectiveColor, 0f, true, true);
             // SetColor already carries the complete RGBA value. Calling
             // SetAlpha afterwards destroys semantic alpha (notably the
             // half-alpha Light category and transparent navigation rows).
