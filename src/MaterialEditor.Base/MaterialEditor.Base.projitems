@@ -9,6 +9,9 @@
     <Import_RootNamespace>MaterialEditor.API</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialAssetFileWrite.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CubemapExportOperation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Assets\MaterialEditorAssetWorkflow.Export.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialWorkBudget.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialAssetFileRead.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialEditRequestQueue.FileRead.cs" />

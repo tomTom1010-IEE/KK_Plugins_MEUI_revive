@@ -30,3 +30,24 @@ units, capped at 16 rows per frame. At least one unit runs to guarantee progress
 The existing synchronous acquisition path is unchanged. PNG decode, face uploads
 and final Apply remain indivisible and can exceed the budget. Managed checks cover
 the unit cap and forward progress, not real Unity frame-time guarantees.
+
+## Staged Cubemap export
+
+Interactive export owns a bounded queue, conversion reservation, face snapshot,
+projection buffer and writer. It captures all six faces in the same frame so
+in-place changes by external plugins cannot produce a mixed-generation panorama.
+The existing reusable GPU readback resources and color handling are retained.
+This deliberately does not claim to eliminate the synchronous six-face readback.
+
+Projection uses the shared cooperative budget. Unity texture creation/upload and
+PNG encoding run in a later main-thread stage and remain indivisible. File bytes
+are written in worker chunks to a unique sibling temporary file; only a validated
+main-thread completion publishes it with same-directory move/replace. A failed or
+cancelled write does not truncate an existing destination. Memory admission remains
+owned until the writer has exited, including cancellation. Normal Texture2D export
+and original-byte export retain their existing synchronous paths in this module.
+
+The synchronous Cubemap conversion API drives the same operation to completion.
+No projection formula, sampling, panorama dimensions or source-size limit changed.
+KKS build and managed write checks passed; readable/non-readable export direction,
+color and actual frame times still require Unity/game validation.

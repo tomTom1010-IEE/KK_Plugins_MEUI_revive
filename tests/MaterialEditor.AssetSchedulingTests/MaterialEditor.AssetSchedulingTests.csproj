@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../src/MaterialEditor.Base/Operations/MaterialAssetFileWrite.cs" Link="MaterialAssetFileWrite.cs" />
     <Compile Include="../../src/MaterialEditor.Base/Operations/MaterialWorkBudget.cs" Link="MaterialWorkBudget.cs" />
     <Compile Include="../../src/MaterialEditor.Base/Operations/MaterialAssetFileRead.cs" Link="MaterialAssetFileRead.cs" />
     <Compile Include="../../src/MaterialEditor.Base/Operations/MaterialEditResult.cs" Link="MaterialEditResult.cs" />

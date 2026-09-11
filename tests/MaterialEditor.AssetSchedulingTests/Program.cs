@@ -27,6 +27,20 @@ static class Program
         {
             var bytes = new byte[] { 3, 1, 4, 1, 5 };
             File.WriteAllBytes(path, bytes);
+            using (var write = MaterialAssetFileWrite.Begin(path, new byte[] { 9, 8 }, null))
+            {
+                Until(() => write.IsComplete);
+                Check(File.ReadAllBytes(path).SequenceEqual(bytes), "Write must not publish before commit");
+                write.Dispose();
+                Check(!write.TryCommit(out _), "Cancelled write must not commit");
+                Check(File.ReadAllBytes(path).SequenceEqual(bytes), "Cancellation must preserve the old file");
+            }
+            using (var write = MaterialAssetFileWrite.Begin(path, bytes, null))
+            {
+                Until(() => write.IsComplete);
+                Check(write.TryCommit(out _), "Atomic replacement");
+                Check(File.ReadAllBytes(path).SequenceEqual(bytes), "Committed payload");
+            }
             using (var first = MaterialAssetFileRead.Begin(path))
             using (var second = MaterialAssetFileRead.Begin(path))
             {
