@@ -88,9 +88,11 @@ cross-plugin readiness checks remain required before considering this release-re
 
 - Queue advancement keeps a stable request reference across reentrant disposal and
   contains cancellation exceptions. Terminal notifications remain exactly once.
-- Invalidation covers overlapping ancestor/descendant apply scopes with matching
-  material/property names. Unrelated object roots remain isolated; watcher
-  coalescing deliberately retains exact-root matching.
+- Reset invalidates existing requests for its material/name group and optional
+  texture slot. Different roots match only when the reset scope actually contains
+  the queued material, not merely because their hierarchies overlap. Cancellation
+  snapshots all queues before callbacks, so new imports cannot inherit an earlier
+  Reset. Watcher coalescing deliberately retains exact-root matching.
 - Asynchronous Cubemap import, character preparation and export share a 2 ms
   cooperative frame budget. Waiting operations retain FIFO priority, cancelled
   owners release their ticket, and owners that stop polling expire. Row loops

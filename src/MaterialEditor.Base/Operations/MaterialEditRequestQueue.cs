@@ -25,12 +25,17 @@ namespace MaterialEditorAPI
         internal bool IsAlive => Root != null && Material != null
             && Material.shader == _shader && Material.NameFormatted() == MaterialName;
 
-        internal bool Matches(GameObject root, string materialName, string property) =>
-            Root != null && root != null
-            && (ReferenceEquals(Root, root) || Root.transform.IsChildOf(root.transform)
-                || root.transform.IsChildOf(Root.transform))
-            && (materialName == null || MaterialName == materialName)
-            && (property == null || Property == property);
+        internal bool Matches(GameObject root, string materialName, string property)
+        {
+            if (Root == null || root == null
+                || (materialName != null && MaterialName != materialName)
+                || (property != null && Property != property)) return false;
+            // Reset addresses a material (or one of its texture slots), not an
+            // arbitrary overlap between object hierarchies. Keep the same-root
+            // name group; different roots must actually address this material.
+            return ReferenceEquals(Root, root) || (Material != null
+                && MaterialAPI.GetObjectMaterials(root, MaterialName).Contains(Material));
+        }
 
         internal bool SameProperty(MaterialEditTarget other) =>
             other != null && ReferenceEquals(Root, other.Root)
@@ -185,12 +190,21 @@ namespace MaterialEditorAPI
 
         internal static void CancelTarget(GameObject root, string materialName = null, string property = null)
         {
+            // Capture every old request before invoking any completion callbacks.
+            // A callback may enqueue a new import on another registered queue;
+            // that import must not inherit cancellation from this Reset.
+            var removed = new List<Request>();
             foreach (var weak in Queues.ToArray())
             {
                 var queue = weak.Target as MaterialEditRequestQueue;
-                queue?.CancelWhere(x => x.Target.Matches(root, materialName, property),
-                    MaterialEditStatus.Cancelled, true);
+                if (queue == null) continue;
+                var pending = queue._pending.FindAll(x => x.Target.Matches(root, materialName, property));
+                foreach (var request in pending) queue._pending.Remove(request);
+                removed.AddRange(pending);
+                if (queue._active != null && queue._active.Target.Matches(root, materialName, property))
+                    removed.Add(queue._active);
             }
+            foreach (var request in removed) CancelRequest(request, MaterialEditStatus.Cancelled);
         }
 
         public void Dispose()

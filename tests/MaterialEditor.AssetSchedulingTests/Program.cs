@@ -89,10 +89,35 @@ static class Program
             var child = new UnityEngine.GameObject();
             child.transform.parent = root.transform;
             var childTarget = new MaterialEditTarget(child, material, "Tex");
-            Check(childTarget.Matches(root, "material", "Tex"), "Parent cancels child scope");
-            Check(target.Matches(child, "material", "Tex"), "Child invalidates overlapping parent scope");
+            root.materials.Add(material);
+            Check(childTarget.Matches(root, "material", "Tex"), "Reset addresses the queued material");
+            Check(!target.Matches(child, "material", "Tex"), "Hierarchy alone does not cancel an import");
+            Check(!childTarget.Matches(root, "material", "OtherTex"), "Other texture slots stay isolated");
             Check(!childTarget.Matches(new UnityEngine.GameObject(), "material", "Tex"), "Unrelated objects stay isolated");
             Check(!childTarget.SameProperty(target), "Watcher coalescing keeps exact scope");
+            using (var oldQueue = new MaterialEditRequestQueue())
+            using (var newQueue = new MaterialEditRequestQueue())
+            {
+                var oldCompletions = 0;
+                var newApplied = false;
+                Action<MaterialEditResult> lateCompletion = null;
+                oldQueue.Enqueue(target, () => true, done => { lateCompletion = done; return () => { }; }, result =>
+                {
+                    Check(result.Status == MaterialEditStatus.Cancelled, "Reset cancels old import");
+                    oldCompletions++;
+                    newQueue.Enqueue(target, () => true, done =>
+                    {
+                        newApplied = true;
+                        done(MaterialEditResult.FromApplied(true));
+                        return null;
+                    }, r => Check(r.Succeeded, "New import must not inherit old Reset"));
+                });
+                oldQueue.Pump();
+                MaterialEditRequestQueue.CancelTarget(root, "material", "Tex");
+                lateCompletion(MaterialEditResult.FromApplied(true));
+                newQueue.Pump();
+                Check(oldCompletions == 1 && newApplied, "Old completion ignored; new import survives");
+            }
             using (var queue = new MaterialEditRequestQueue())
             {
                 var completions = 0;
@@ -148,7 +173,7 @@ static class Program
 namespace UnityEngine
 {
     public static class Time { public static int frameCount; }
-    public class GameObject { public Transform transform = new Transform(); }
+    public class GameObject { public Transform transform = new Transform(); public List<Material> materials = new List<Material>(); }
     public class Transform
     {
         public Transform parent;
@@ -160,6 +185,10 @@ namespace UnityEngine
 }
 namespace MaterialEditorAPI
 {
+    public static class MaterialAPI
+    {
+        public static List<UnityEngine.Material> GetObjectMaterials(UnityEngine.GameObject root, string name) => root.materials;
+    }
     public sealed class TestLogger { public void LogWarning(object value) { } }
     public static class MaterialEditorPluginBase { public static TestLogger Logger = new TestLogger(); }
     public static class Names { public static string NameFormatted(this UnityEngine.Material value) => "material"; }
