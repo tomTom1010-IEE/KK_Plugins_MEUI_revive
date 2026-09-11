@@ -22,3 +22,11 @@ internal to each compiled plugin assembly, as are the existing queues/cache.
 Verification: KKS build and managed scheduling checks passed (payload, ready-buffer
 admission, ordering, application thread, cancellation and read-error results).
 These checks use stand-ins and do not establish in-game behavior.
+
+## Cooperative Cubemap import budget
+
+Interactive acquisition now checks a 2 ms internal time budget between scanline
+units, capped at 16 rows per frame. At least one unit runs to guarantee progress.
+The existing synchronous acquisition path is unchanged. PNG decode, face uploads
+and final Apply remain indivisible and can exceed the budget. Managed checks cover
+the unit cap and forward progress, not real Unity frame-time guarantees.

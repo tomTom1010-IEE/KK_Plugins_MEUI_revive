@@ -17,6 +17,11 @@ static class Program
 
     static void Main()
     {
+        var budget = new MaterialWorkBudget(10000, 2);
+        Check(budget.TryStartUnit() && budget.TryStartUnit() && !budget.TryStartUnit(), "Work-unit cap");
+        budget = new MaterialWorkBudget(0.000001, 10);
+        Thread.Sleep(1);
+        Check(budget.TryStartUnit() && !budget.TryStartUnit(), "Expired budget still makes one unit of progress");
         var path = Path.GetTempFileName();
         try
         {

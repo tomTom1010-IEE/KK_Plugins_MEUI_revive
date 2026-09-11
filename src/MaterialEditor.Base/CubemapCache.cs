@@ -195,6 +195,15 @@ namespace MaterialEditorAPI
             return true;
         }
 
+        internal bool ProcessFrame(out string error)
+        {
+            error = null;
+            var budget = new MaterialWorkBudget(MaterialWorkBudget.DefaultMilliseconds, MaterialWorkBudget.DefaultRowLimit);
+            while (!IsComplete && budget.TryStartUnit())
+                if (!ProcessRows(1, out error)) return false;
+            return true;
+        }
+
         internal MaterialEditorCubemapLease TakeLease()
         {
             if (_disposed || !IsComplete)

@@ -23,8 +23,6 @@ namespace MaterialEditorAPI
     /// </summary>
     internal sealed class MaterialEditorCubemapImportCoordinator : IDisposable
     {
-        internal const int RowsPerFrame = 16;
-
         private MaterialEditorCubemapBackgroundRead _backgroundRead;
         private MaterialEditorCubemapAcquireOperation _acquire;
         private MaterialEditorCubemapLease _warmLease;
@@ -139,7 +137,7 @@ namespace MaterialEditorAPI
                 }
 
                 string processError;
-                if (!_acquire.ProcessRows(RowsPerFrame, out processError))
+                if (!_acquire.ProcessFrame(out processError))
                 {
                     Fail(processError);
                     return;
@@ -328,8 +326,10 @@ namespace MaterialEditorAPI
                             "Cubemap decode/conversion started ("
                             + _coordinator.TotalRows
                             + " rows, "
-                            + MaterialEditorCubemapImportCoordinator.RowsPerFrame
-                            + " scanline/face rows per frame). PNG Unity decode remains "
+                            + MaterialWorkBudget.DefaultMilliseconds
+                            + " ms cooperative budget, at most "
+                            + MaterialWorkBudget.DefaultRowLimit
+                            + " rows per frame). Individual Unity calls can exceed the budget. PNG decode remains "
                             + "on the main thread; HDR decode and projection work are incremental.");
                     }
                     else if (previousState

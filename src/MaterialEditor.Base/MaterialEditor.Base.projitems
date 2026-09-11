@@ -9,6 +9,7 @@
     <Import_RootNamespace>MaterialEditor.API</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialWorkBudget.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialAssetFileRead.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialEditRequestQueue.FileRead.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Virtualization\VirtualListCachePolicy.cs" />
