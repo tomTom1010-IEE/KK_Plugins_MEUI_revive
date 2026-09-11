@@ -133,14 +133,12 @@ namespace KK_Plugins.MaterialEditor
 
             var materialName = material.NameFormatted();
             var existingProperty = MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == materialName);
-            MaterialTextureProperty candidateProperty = null;
-            var committed = false;
-
-            try
-            {
+            var result = MaterialTextureImportTransaction.Execute(
+                go, materialName, propertyName, () =>
+                {
                 var texID = SetAndGetTextureID(data);
                 var animationDefinition = MEAnimationUtil.LoadAnimationDefFromBytes(texID, data, SetAndGetTextureID);
-                candidateProperty = new MaterialTextureProperty(
+                return new MaterialTextureProperty(
                     id,
                     materialName,
                     propertyName,
@@ -150,59 +148,23 @@ namespace KK_Plugins.MaterialEditor
                     existingProperty == null ? null : existingProperty.Scale,
                     existingProperty == null ? null : existingProperty.ScaleOriginal,
                     animationDefinition);
-
-                if (!SetTextureWithProperty(go, candidateProperty))
-                    return false;
-
-                CommitTextureImport(existingProperty, candidateProperty);
-                committed = true;
-                return true;
-            }
-            finally
-            {
-                if (!committed)
+                },
+                candidate => SetTextureWithProperty(go, candidate),
+                candidate => CommitTextureImport(existingProperty, candidate),
+                candidate =>
                 {
-                    if (candidateProperty != null)
-                        AnimationControllerMap.Remove(candidateProperty);
+                    if (candidate != null) AnimationControllerMap.Remove(candidate);
                     PurgeUnusedTextures();
-                }
-            }
+                });
+            if (!result.Succeeded)
+                MaterialEditorPluginBase.Logger?.LogWarning("Texture import: " + result.Stage + ": " + result.Diagnostic);
+            return result.Succeeded;
         }
 
-        private void CommitTextureImport(MaterialTextureProperty existingProperty, MaterialTextureProperty candidateProperty)
-        {
-            if (existingProperty == null)
-            {
-                MaterialTexturePropertyList.Add(candidateProperty);
-                return;
-            }
-
-            var previousTexID = existingProperty.TexID;
-            var previousAnimationDefinition = existingProperty.TexAnimationDef;
-            var hadPreviousController = AnimationControllerMap.TryGetValue(existingProperty, out var previousController);
-            var hasCandidateController = AnimationControllerMap.TryGetValue(candidateProperty, out var candidateController);
-            try
-            {
-                existingProperty.TexID = candidateProperty.TexID;
-                existingProperty.TexAnimationDef = candidateProperty.TexAnimationDef;
-                AnimationControllerMap.Remove(candidateProperty);
-                if (hasCandidateController)
-                    AnimationControllerMap[existingProperty] = candidateController;
-                else
-                    AnimationControllerMap.Remove(existingProperty);
-            }
-            catch
-            {
-                existingProperty.TexID = previousTexID;
-                existingProperty.TexAnimationDef = previousAnimationDefinition;
-                AnimationControllerMap.Remove(candidateProperty);
-                if (hadPreviousController)
-                    AnimationControllerMap[existingProperty] = previousController;
-                else
-                    AnimationControllerMap.Remove(existingProperty);
-                throw;
-            }
-        }
+        private void CommitTextureImport(MaterialTextureProperty existingProperty, MaterialTextureProperty candidateProperty) =>
+            MaterialTextureImportCommit.Commit(MaterialTexturePropertyList, AnimationControllerMap,
+                existingProperty, candidateProperty, x => x.TexID, (x, id) => x.TexID = id,
+                x => x.TexAnimationDef, (x, animation) => x.TexAnimationDef = animation);
 
         /// <summary>
         /// Get the saved material property value or null if none is saved

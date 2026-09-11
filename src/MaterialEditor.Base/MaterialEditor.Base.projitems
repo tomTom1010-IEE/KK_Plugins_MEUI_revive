@@ -9,6 +9,11 @@
     <Import_RootNamespace>MaterialEditor.API</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Sections\Properties\PropertyRowBuilders.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialTextureImportTransaction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialTextureSnapshot.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialTextureImportCommit.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialCubemapImportTransaction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialEditResult.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialEditRequestQueue.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)NormalMapManager.cs" />
@@ -81,7 +86,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\UI.Presentation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\UI.ShaderUiMetadata.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\UI.PropertyDescriptor.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)UI\Sections\Properties\PropertyRowBuilders.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\UI.AutoScrollToCenter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\UI.FloatLabelDragTrigger.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\UI.DropdownFilter.cs" />
