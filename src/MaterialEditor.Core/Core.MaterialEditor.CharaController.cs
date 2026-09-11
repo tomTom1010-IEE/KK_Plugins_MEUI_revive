@@ -100,60 +100,27 @@ namespace KK_Plugins.MaterialEditor
                 else
                     data.data.Add(TexDicSaveKey, null);
 
-                if (RendererPropertyList.Count > 0)
-                    data.data.Add(nameof(RendererPropertyList), MessagePackSerializer.Serialize(RendererPropertyList));
-                else
-                    data.data.Add(nameof(RendererPropertyList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(RendererPropertyList), RendererPropertyList);
 
-                if (ProjectorPropertyList.Count > 0)
-                    data.data.Add(nameof(ProjectorPropertyList), MessagePackSerializer.Serialize(ProjectorPropertyList));
-                else
-                    data.data.Add(nameof(ProjectorPropertyList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(ProjectorPropertyList), ProjectorPropertyList);
 
-                if (MaterialNamePropertyList.Count > 0)
-                    data.data.Add(nameof(MaterialNamePropertyList), MessagePackSerializer.Serialize(MaterialNamePropertyList));
-                else
-                    data.data.Add(nameof(MaterialNamePropertyList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(MaterialNamePropertyList), MaterialNamePropertyList);
 
-                if (MaterialFloatPropertyList.Count > 0)
-                    data.data.Add(nameof(MaterialFloatPropertyList), MessagePackSerializer.Serialize(MaterialFloatPropertyList));
-                else
-                    data.data.Add(nameof(MaterialFloatPropertyList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(MaterialFloatPropertyList), MaterialFloatPropertyList);
 
-                if (MaterialKeywordPropertyList.Count > 0)
-                    data.data.Add(nameof(MaterialKeywordPropertyList), MessagePackSerializer.Serialize(MaterialKeywordPropertyList));
-                else
-                    data.data.Add(nameof(MaterialKeywordPropertyList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(MaterialKeywordPropertyList), MaterialKeywordPropertyList);
 
-                if (MaterialColorPropertyList.Count > 0)
-                    data.data.Add(nameof(MaterialColorPropertyList), MessagePackSerializer.Serialize(MaterialColorPropertyList));
-                else
-                    data.data.Add(nameof(MaterialColorPropertyList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(MaterialColorPropertyList), MaterialColorPropertyList);
 
-                if (MaterialVectorPropertyList.Count > 0)
-                    data.data.Add(nameof(MaterialVectorPropertyList), MessagePackSerializer.Serialize(MaterialVectorPropertyList));
-                else
-                    data.data.Add(nameof(MaterialVectorPropertyList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(MaterialVectorPropertyList), MaterialVectorPropertyList);
 
-                if (MaterialTexturePropertyList.Count > 0)
-                    data.data.Add(nameof(MaterialTexturePropertyList), MessagePackSerializer.Serialize(MaterialTexturePropertyList));
-                else
-                    data.data.Add(nameof(MaterialTexturePropertyList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(MaterialTexturePropertyList), MaterialTexturePropertyList);
 
-                if (MaterialCubemapPropertyList.Count > 0)
-                    data.data.Add(nameof(MaterialCubemapPropertyList), MessagePackSerializer.Serialize(MaterialCubemapPropertyList));
-                else
-                    data.data.Add(nameof(MaterialCubemapPropertyList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(MaterialCubemapPropertyList), MaterialCubemapPropertyList);
 
-                if (MaterialShaderList.Count > 0)
-                    data.data.Add(nameof(MaterialShaderList), MessagePackSerializer.Serialize(MaterialShaderList));
-                else
-                    data.data.Add(nameof(MaterialShaderList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(MaterialShaderList), MaterialShaderList);
 
-                if (MaterialCopyList.Count > 0)
-                    data.data.Add(nameof(MaterialCopyList), MessagePackSerializer.Serialize(MaterialCopyList));
-                else
-                    data.data.Add(nameof(MaterialCopyList), null);
+                MaterialEditRecordSerialization.Write(data, nameof(MaterialCopyList), MaterialCopyList);
 
                 SetExtendedData(data);
             }
