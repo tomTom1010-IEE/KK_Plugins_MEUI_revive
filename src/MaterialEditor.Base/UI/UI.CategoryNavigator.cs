@@ -57,19 +57,25 @@ namespace MaterialEditorAPI
                 -MaterialEditorLayout.Margin,
                 0f);
 
-            _materialText = MaterialEditorControlFactory.CreateText(
-                "CategoryNavigatorMaterial",
+            var materialHeader = MaterialEditorControlFactory.CreatePanel(
+                "CategoryNavigatorMaterialHeader",
                 Panel.transform,
-                string.Empty,
-                MaterialEditorTextRole.SecondaryChrome);
-            ConfigureSingleLineText(_materialText);
-            _materialText.alignment = TextAnchor.MiddleCenter;
-            _materialText.transform.SetRect(
+                MaterialEditorPanelRole.MaterialRow);
+            materialHeader.transform.SetRect(
                 0f, 1f, 1f, 1f,
                 MaterialEditorLayout.Margin,
                 -MaterialEditorLayout.HeaderHeight * 2f,
                 -MaterialEditorLayout.Margin,
                 -MaterialEditorLayout.HeaderHeight);
+
+            _materialText = MaterialEditorControlFactory.CreateText(
+                "CategoryNavigatorMaterial",
+                materialHeader.transform,
+                string.Empty,
+                MaterialEditorTextRole.Label);
+            ConfigureSingleLineText(_materialText);
+            _materialText.alignment = TextAnchor.MiddleCenter;
+            _materialText.transform.SetRect();
 
             _shaderHeader = MaterialEditorControlFactory.CreatePanel(
                 "CategoryNavigatorShaderHeader",
