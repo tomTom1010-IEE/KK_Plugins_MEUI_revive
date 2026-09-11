@@ -82,7 +82,11 @@ namespace KK_Plugins.MaterialEditor
             _restorePreparations.Clear();
         }
 
-        private void OnDisable() => CancelRestorePreparations();
+        private void OnDisable()
+        {
+            _textureImports.CancelAll();
+            CancelRestorePreparations();
+        }
         /// <inheritdoc />
         protected override void OnEnable()
         {

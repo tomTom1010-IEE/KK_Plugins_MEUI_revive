@@ -113,15 +113,17 @@ namespace MaterialEditorAPI
             if (_disposed) return;
             if (_active != null && !_active.Finished)
             {
-                if (!Valid(_active)) CancelRequest(_active, MaterialEditStatus.Cancelled);
+                var active = _active;
+                if (!Valid(active)) CancelRequest(active, MaterialEditStatus.Cancelled);
                 else
                 {
-                    try { _active.Advance?.Invoke(); }
+                    try { if (!active.Finished) active.Advance?.Invoke(); }
                     catch (Exception ex)
                     {
-                        var cancel = _active.Cancel;
-                        _active.Finish(new MaterialEditResult(MaterialEditStatus.Failed, "Advance", ex.Message));
-                        cancel?.Invoke();
+                        var cancel = active.Cancel;
+                        active.Finish(new MaterialEditResult(MaterialEditStatus.Failed, "Advance", ex.Message));
+                        try { cancel?.Invoke(); }
+                        catch (Exception cleanup) { MaterialEditorPluginBase.Logger?.LogWarning(cleanup); }
                     }
                 }
                 return;

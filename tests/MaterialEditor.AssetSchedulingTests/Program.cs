@@ -64,6 +64,15 @@ static class Program
             var mainThread = Environment.CurrentManagedThreadId;
             using (var queue = new MaterialEditRequestQueue())
             {
+                var completions = 0;
+                queue.Enqueue(target, () => true, done => () => { }, r => completions++,
+                    advance: () => { queue.Dispose(); throw new Exception("Reentrant disposal"); });
+                queue.Pump();
+                queue.Pump();
+                Check(completions == 1, "Reentrant disposal completes once and contains the exception");
+            }
+            using (var queue = new MaterialEditRequestQueue())
+            {
                 var order = new List<int>();
                 var completed = 0;
                 for (var i = 0; i < 3; i++)
