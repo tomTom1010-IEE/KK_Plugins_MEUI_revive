@@ -101,194 +101,42 @@ namespace KK_Plugins.MaterialEditor
             GameObject go,
             bool logNormalizationWarning)
         {
-            if (data == null)
-                return false;
-
-            MaterialEditorCubemapLease lease = null;
-            var storedLease = false;
-            var textureEntryCreated = false;
-            var texID = 0;
-            MaterialCubemapProperty cubemapProperty = null;
-            var propertyAdded = false;
-            int? previousTexID = null;
-            MaterialCubemapOriginalState.Checkpoint previousOriginalState = null;
-            Dictionary<Material, Cubemap> previousAppliedValues = null;
-            string materialName = null;
-            try
-            {
-                string warning;
-                string error;
-                var acquired = contentKey == null
-                    ? MaterialEditorCubemapCache.TryAcquire(
-                        data,
-                        out lease,
-                        out warning,
-                        out error)
-                    : MaterialEditorCubemapCache.TryAcquire(
-                        data,
-                        contentKey,
-                        out lease,
-                        out warning,
-                        out error);
-                if (!acquired)
+            if (material == null) return false;
+            var existing = FindMaterialCubemapProperty(slot, objectType, material, propertyName);
+            var result = MaterialCubemapImportTransaction.Execute(data, contentKey,
+                go, material.NameFormatted(), propertyName, logNormalizationWarning,
+                new MaterialCubemapImportStorage
                 {
-                    MaterialEditorPlugin.Logger.LogMessage(error);
-                    return false;
-                }
-                if (logNormalizationWarning && !string.IsNullOrEmpty(warning))
-                    MaterialEditorPlugin.Logger.LogWarning(warning);
-
-                var textureCountBefore = TextureDictionary.Count;
-                texID = SetAndGetTextureID(data);
-                textureEntryCreated = TextureDictionary.Count > textureCountBefore;
-                CubemapLeases.Store(texID, lease);
-                // Store consumes ownership both when it adds the lease and when
-                // an existing texture ID makes the new reference redundant.
-                lease = null;
-                storedLease = true;
-
-                materialName = material.NameFormatted();
-                previousAppliedValues =
-                    MaterialCubemapOriginalSnapshot.SynchronizeByMaterialReference(
-                        go,
-                        materialName,
-                        propertyName,
-                        null);
-                cubemapProperty = FindMaterialCubemapProperty(
-                    slot,
-                    objectType,
-                    material,
-                    propertyName);
-                if (cubemapProperty == null)
-                {
-                    cubemapProperty = new MaterialCubemapProperty(
-                        objectType,
-                        GetCoordinateIndex(objectType),
-                        slot,
-                        materialName,
-                        propertyName,
-                        texID);
-                    MaterialCubemapPropertyList.Add(cubemapProperty);
-                    propertyAdded = true;
-                }
-                else
-                {
-                    previousTexID = cubemapProperty.TexID;
-                    previousOriginalState =
-                        cubemapProperty.CubemapOriginalState.CaptureCheckpoint();
-                    cubemapProperty.TexID = texID;
-                }
-
-                if (SetCubemapWithProperty(go, cubemapProperty))
-                    return true;
-
-                RollbackMaterialCubemapSet(
-                    go,
-                    materialName,
-                    propertyName,
-                    cubemapProperty,
-                    propertyAdded,
-                    previousTexID,
-                    previousOriginalState,
-                    previousAppliedValues,
-                    texID,
-                    textureEntryCreated);
-                textureEntryCreated = false;
-                MaterialEditorPluginBase.Logger.LogWarning(
-                    "Could not apply Cubemap " + materialName + "/" + propertyName
-                    + "; the previous override was preserved.");
-                return false;
-            }
-            catch (Exception exception)
-            {
-                RollbackMaterialCubemapSet(
-                    go,
-                    materialName,
-                    propertyName,
-                    cubemapProperty,
-                    propertyAdded,
-                    previousTexID,
-                    previousOriginalState,
-                    previousAppliedValues,
-                    texID,
-                    textureEntryCreated);
-                textureEntryCreated = false;
-                MaterialEditorPluginBase.Logger.LogWarning(
-                    "Could not apply Cubemap; the previous override was preserved. "
-                    + exception.Message);
-                return false;
-            }
-            finally
-            {
-                if (lease != null)
-                    lease.Dispose();
-                if (storedLease)
-                    PurgeUnusedCubemapLeases();
-            }
+                    Count = () => TextureDictionary.Count,
+                    StoreData = SetAndGetTextureID,
+                    StoreLease = CubemapLeases.Store,
+                    RemoveCreated = RemoveFailedCubemapData,
+                    PurgeLeases = PurgeUnusedCubemapLeases
+                }, MaterialCubemapPropertyList, existing,
+                texId => new MaterialCubemapProperty(objectType, GetCoordinateIndex(objectType), slot, material.NameFormatted(), propertyName, texId),
+                CubemapRecordAccess, candidate => SetCubemapWithProperty(go, candidate));
+            if (!result.Succeeded)
+                MaterialEditorPluginBase.Logger?.LogWarning("Cubemap import: " + result.Stage + ": " + result.Diagnostic);
+            return result.Succeeded;
         }
 
-        private void RollbackMaterialCubemapSet(
-            GameObject gameObject,
-            string materialName,
-            string propertyName,
-            MaterialCubemapProperty cubemapProperty,
-            bool propertyAdded,
-            int? previousTexID,
-            MaterialCubemapOriginalState.Checkpoint previousOriginalState,
-            Dictionary<Material, Cubemap> previousAppliedValues,
-            int texID,
-            bool textureEntryCreated)
+        private static readonly MaterialCubemapRecordAccess<MaterialCubemapProperty> CubemapRecordAccess =
+            new MaterialCubemapRecordAccess<MaterialCubemapProperty>
+            {
+                GetId = x => x.TexID,
+                SetId = (x, id) => x.TexID = id,
+                Original = x => x.CubemapOriginalState
+            };
+
+        private void RemoveFailedCubemapData(int texId)
         {
-            try
-            {
-                MaterialCubemapOriginalSnapshot.RestoreByMaterialReference(
-                    gameObject,
-                    materialName,
-                    propertyName,
-                    previousAppliedValues);
-            }
-            catch (Exception exception)
-            {
-                MaterialEditorPluginBase.Logger.LogWarning(
-                    "Could not fully restore the previous Cubemap material value. "
-                    + exception.Message);
-            }
-
-            if (cubemapProperty != null)
-            {
-                if (propertyAdded)
-                {
-                    MaterialCubemapPropertyList.Remove(cubemapProperty);
-                    cubemapProperty.ClearCubemapOriginalSnapshot();
-                }
-                else
-                {
-                    cubemapProperty.TexID = previousTexID;
-                    cubemapProperty.CubemapOriginalState.RestoreCheckpoint(
-                        previousOriginalState,
-                        true);
-                }
-            }
-
-            if (textureEntryCreated)
-            {
-                CubemapLeases.Release(texID);
-                TextureContainer container;
-                if (TextureDictionary.TryGetValue(texID, out container))
-                {
-                    try
-                    {
-                        if (container != null)
-                            container.Dispose();
-                    }
-                    finally
-                    {
-                        TextureDictionary.Remove(texID);
-                    }
-                }
-            }
-            PurgeUnusedCubemapLeases();
+            CubemapLeases.Release(texId);
+            TextureContainer container;
+            if (!TextureDictionary.TryGetValue(texId, out container)) return;
+            try { container?.Dispose(); }
+            finally { TextureDictionary.Remove(texId); }
         }
+
 
         /// <summary>
         /// Get the persisted native Cubemap value, or null when no override exists.
