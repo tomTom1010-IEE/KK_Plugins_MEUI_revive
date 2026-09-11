@@ -79,7 +79,7 @@ namespace KK_Plugins.MaterialEditor
         {
             if (material == null) return false;
             var go = GetObjectByID(id);
-            var existing = MaterialCubemapPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted());
+            var existing = CubemapPropertyQuery.First(MaterialCubemapPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             var result = MaterialCubemapImportTransaction.Execute(data, contentKey,
                 go, material.NameFormatted(), propertyName, logNormalizationWarning,
                 new MaterialCubemapImportStorage
@@ -145,7 +145,7 @@ namespace KK_Plugins.MaterialEditor
             Material material,
             string propertyName)
         {
-            var cubemapProperty = MaterialCubemapPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted());
+            var cubemapProperty = CubemapPropertyQuery.First(MaterialCubemapPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (cubemapProperty == null || !cubemapProperty.TexID.HasValue)
                 return null;
 
@@ -161,7 +161,7 @@ namespace KK_Plugins.MaterialEditor
             Material material,
             string propertyName)
         {
-            return MaterialCubemapPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted())?.TexID == null;
+            return CubemapPropertyQuery.First(MaterialCubemapPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.TexID == null;
         }
 
         public void RemoveMaterialCubemap(
@@ -170,7 +170,7 @@ namespace KK_Plugins.MaterialEditor
             string propertyName)
         {
             MaterialEditRequestQueue.CancelTarget(GetObjectByID(id), material == null ? null : material.NameFormatted(), propertyName);
-            var cubemapProperty = MaterialCubemapPropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == material.NameFormatted());
+            var cubemapProperty = CubemapPropertyQuery.First(MaterialCubemapPropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (cubemapProperty == null)
                 return;
 

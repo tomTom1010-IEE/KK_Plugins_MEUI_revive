@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)UI\Virtualization\VirtualListCachePolicy.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Virtualization\VirtualListViewPool.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialPropertyRecordQuery.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Sections\Properties\PropertyRowBinding.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Styling\MaterialEditorDropdownPopupLayout.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PluginBase.Configuration.cs" />

@@ -132,7 +132,7 @@ namespace KK_Plugins.MaterialEditor
                 return false;
 
             var materialName = material.NameFormatted();
-            var existingProperty = MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.Property == propertyName && x.MaterialName == materialName);
+            var existingProperty = TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, materialName, propertyName));
             var result = MaterialTextureImportTransaction.Execute(
                 go, materialName, propertyName, () =>
                 {
@@ -175,7 +175,7 @@ namespace KK_Plugins.MaterialEditor
         /// <returns>Saved material property value or null if none is saved</returns>
         public Texture GetMaterialTexture(int id, Material material, string propertyName)
         {
-            var textureProperty = MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName);
+            var textureProperty = TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (textureProperty?.TexID != null)
                 return TextureDictionary[(int)textureProperty.TexID].Texture;
             return null;
@@ -189,7 +189,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <returns>True if the texture has not been modified, false if it has been.</returns>
         public bool GetMaterialTextureOriginal(int id, Material material, string propertyName) =>
-            MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName)?.TexID == null;
+            TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.TexID == null;
         /// <summary>
         /// Remove the saved material property value if one is saved and optionally also update the materials
         /// </summary>
@@ -200,7 +200,7 @@ namespace KK_Plugins.MaterialEditor
         public void RemoveMaterialTexture(int id, Material material, string propertyName, bool displayMessage = true)
         {
             MaterialEditRequestQueue.CancelTarget(GetObjectByID(id), material == null ? null : material.NameFormatted(), propertyName);
-            var textureProperty = MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName);
+            var textureProperty = TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (textureProperty != null)
             {
                 if (displayMessage)
@@ -234,7 +234,7 @@ namespace KK_Plugins.MaterialEditor
         public void SetMaterialTextureOffset(int id, Material material, string propertyName, Vector2 value, bool setProperty = true)
         {
             GameObject gameObject = GetObjectByID(id);
-            var textureProperty = MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName);
+            var textureProperty = TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (textureProperty == null)
             {
                 Vector2 valueOriginal = material.GetTextureOffset($"_{propertyName}");
@@ -263,7 +263,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <returns>Saved material property value or null if none is saved</returns>
         public Vector2? GetMaterialTextureOffset(int id, Material material, string propertyName) =>
-            MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName)?.Offset;
+            TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.Offset;
         /// <summary>
         /// Get the saved material property's original value or null if none is saved
         /// </summary>
@@ -272,7 +272,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <returns>Saved material property's original value or null if none is saved</returns>
         public Vector2? GetMaterialTextureOffsetOriginal(int id, Material material, string propertyName) =>
-            MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName)?.OffsetOriginal;
+            TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.OffsetOriginal;
         /// <summary>
         /// Remove the saved material property value if one is saved and optionally also update the materials
         /// </summary>
@@ -290,7 +290,7 @@ namespace KK_Plugins.MaterialEditor
                     SetTextureOffset(gameObject, material.NameFormatted(), propertyName, original);
             }
 
-            var textureProperty = MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName);
+            var textureProperty = TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (textureProperty != null)
             {
                 textureProperty.Offset = null;
@@ -310,7 +310,7 @@ namespace KK_Plugins.MaterialEditor
         public void SetMaterialTextureScale(int id, Material material, string propertyName, Vector2 value, bool setProperty = true)
         {
             GameObject gameObject = GetObjectByID(id);
-            var textureProperty = MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName);
+            var textureProperty = TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (textureProperty == null)
             {
                 Vector2 valueOriginal = material.GetTextureScale($"_{propertyName}");
@@ -340,7 +340,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <returns>Saved material property value or null if none is saved</returns>
         public Vector2? GetMaterialTextureScale(int id, Material material, string propertyName) =>
-            MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName)?.Scale;
+            TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.Scale;
         /// <summary>
         /// Get the saved material property's original value or null if none is saved
         /// </summary>
@@ -349,7 +349,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="propertyName">Property of the material without the leading underscore</param>
         /// <returns>Saved material property's original value or null if none is saved</returns>
         public Vector2? GetMaterialTextureScaleOriginal(int id, Material material, string propertyName) =>
-            MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName)?.ScaleOriginal;
+            TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName))?.ScaleOriginal;
         /// <summary>
         /// Remove the saved material property value if one is saved and optionally also update the materials
         /// </summary>
@@ -367,7 +367,7 @@ namespace KK_Plugins.MaterialEditor
                     SetTextureScale(gameObject, material.NameFormatted(), propertyName, original);
             }
 
-            var textureProperty = MaterialTexturePropertyList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.Property == propertyName);
+            var textureProperty = TexturePropertyQuery.First(MaterialTexturePropertyList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), propertyName));
             if (textureProperty != null)
             {
                 textureProperty.Scale = null;
@@ -387,7 +387,7 @@ namespace KK_Plugins.MaterialEditor
         {
             MaterialEditRequestQueue.CancelTarget(GetObjectByID(id), material == null ? null : material.NameFormatted());
             GameObject gameObject = GetObjectByID(id);
-            var materialProperty = MaterialShaderList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted());
+            var materialProperty = ShaderPropertyQuery.First(MaterialShaderList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), null));
             if (materialProperty == null)
             {
                 string shaderNameOriginal = material.shader.NameFormatted();
@@ -418,7 +418,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <returns>Saved shader name or null if none is saved</returns>
         public string GetMaterialShader(int id, Material material) =>
-            MaterialShaderList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted())?.ShaderName;
+            ShaderPropertyQuery.First(MaterialShaderList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), null))?.ShaderName;
         /// <summary>
         /// Get the saved shader name's original value or null if none is saved
         /// </summary>
@@ -426,7 +426,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <returns>Saved shader name's original value or null if none is saved</returns>
         public string GetMaterialShaderOriginal(int id, Material material) =>
-            MaterialShaderList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted())?.ShaderNameOriginal;
+            ShaderPropertyQuery.First(MaterialShaderList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), null))?.ShaderNameOriginal;
         /// <summary>
         /// Remove the saved shader if one is saved and optionally also update the materials
         /// </summary>
@@ -450,7 +450,7 @@ namespace KK_Plugins.MaterialEditor
                 materialProperty.ShaderNameOriginal = null;
             }
 
-            MaterialShaderList.RemoveAll(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.NullCheck());
+            ShaderPropertyQuery.RemoveAll(MaterialShaderList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), null), x => x.NullCheck());
         }
 
         /// <summary>
@@ -463,7 +463,7 @@ namespace KK_Plugins.MaterialEditor
         public void SetMaterialShaderRenderQueue(int id, Material material, int renderQueue, bool setProperty = true)
         {
             GameObject gameObject = GetObjectByID(id);
-            var materialProperty = MaterialShaderList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted());
+            var materialProperty = ShaderPropertyQuery.First(MaterialShaderList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), null));
             if (materialProperty == null)
             {
                 int renderQueueOriginal = material.renderQueue;
@@ -491,7 +491,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <returns>Saved render queue value or null if none is saved</returns>
         public int? GetMaterialShaderRenderQueue(int id, Material material) =>
-            MaterialShaderList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted())?.RenderQueue;
+            ShaderPropertyQuery.First(MaterialShaderList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), null))?.RenderQueue;
         /// <summary>
         /// Get the saved render queue's original value or null if none is saved
         /// </summary>
@@ -499,7 +499,7 @@ namespace KK_Plugins.MaterialEditor
         /// <param name="material">Material being modified. Also modifies all other materials of the same name.</param>
         /// <returns>Saved render queue value's original or null if none is saved</returns>
         public int? GetMaterialShaderRenderQueueOriginal(int id, Material material) =>
-            MaterialShaderList.FirstOrDefault(x => x.ID == id && x.MaterialName == material.NameFormatted())?.RenderQueueOriginal;
+            ShaderPropertyQuery.First(MaterialShaderList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), null))?.RenderQueueOriginal;
         /// <summary>
         /// Remove the saved render queue value if one is saved and optionally also update the materials
         /// </summary>
@@ -526,7 +526,7 @@ namespace KK_Plugins.MaterialEditor
                 }
             }
 
-            MaterialShaderList.RemoveAll(x => x.ID == id && x.MaterialName == material.NameFormatted() && x.NullCheck());
+            ShaderPropertyQuery.RemoveAll(MaterialShaderList, new MaterialPropertyRecordKey(-1, 0, id, material.NameFormatted(), null), x => x.NullCheck());
         }
 
     }

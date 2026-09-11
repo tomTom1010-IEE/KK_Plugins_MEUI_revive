@@ -240,12 +240,7 @@ namespace KK_Plugins.MaterialEditor
         {
             var coordinateIndex = GetCoordinateIndex(objectType);
             var materialName = material.NameFormatted();
-            return MaterialCubemapPropertyList.FirstOrDefault(x =>
-                x.ObjectType == objectType
-                && x.CoordinateIndex == coordinateIndex
-                && x.Slot == slot
-                && x.Property == propertyName
-                && x.MaterialName == materialName);
+            return CubemapPropertyQuery.First(MaterialCubemapPropertyList, new MaterialPropertyRecordKey((int)objectType, coordinateIndex, slot, materialName, propertyName));
         }
 
         private void RemoveCubemapPropertyIfNull(MaterialCubemapProperty cubemapProperty)

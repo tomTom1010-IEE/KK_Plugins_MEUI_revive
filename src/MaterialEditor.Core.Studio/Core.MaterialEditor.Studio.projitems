@@ -9,6 +9,7 @@
     <Import_RootNamespace>Core.MaterialEditor.Studio</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.SceneController.Queries.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.SceneController.Persistence.Copy.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.SceneController.Persistence.Properties.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.SceneController.Persistence.Textures.cs" />
