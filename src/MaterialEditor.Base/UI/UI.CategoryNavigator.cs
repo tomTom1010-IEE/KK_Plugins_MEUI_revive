@@ -43,54 +43,39 @@ namespace MaterialEditorAPI
                 Panel,
                 MaterialEditorThemeColorRole.Outline);
 
-            var header = MaterialEditorControlFactory.CreatePanel(
-                "CategoryNavigatorHeader",
+            var title = MaterialEditorControlFactory.CreateText(
+                "CategoryNavigatorTitle",
                 Panel.transform,
-                MaterialEditorPanelRole.Header);
-            header.transform.SetRect(
+                "Categories",
+                MaterialEditorTextRole.Chrome);
+            title.fontStyle = FontStyle.Normal;
+            title.alignment = TextAnchor.MiddleCenter;
+            title.transform.SetRect(
                 0f, 1f, 1f, 1f,
                 MaterialEditorLayout.Margin,
                 -MaterialEditorLayout.HeaderHeight,
                 -MaterialEditorLayout.Margin,
                 0f);
 
-            var headerLayout = header.gameObject.AddComponent<HorizontalLayoutGroup>();
-            headerLayout.padding = new RectOffset(
-                MaterialEditorTheme.Spacing.NavigatorHeaderHorizontalInset,
-                MaterialEditorTheme.Spacing.NavigatorHeaderHorizontalInset,
-                0,
-                0);
-            headerLayout.spacing = MaterialEditorTheme.Spacing.Control;
-            headerLayout.childAlignment = TextAnchor.MiddleCenter;
-            headerLayout.childControlWidth = true;
-            headerLayout.childForceExpandWidth = false;
-            headerLayout.childControlHeight = true;
-            headerLayout.childForceExpandHeight = true;
-
-            var title = MaterialEditorControlFactory.CreateText(
-                "CategoryNavigatorTitle",
-                header.transform,
-                "Categories",
-                MaterialEditorTextRole.Chrome);
-            title.fontStyle = FontStyle.Bold;
-            title.alignment = TextAnchor.MiddleCenter;
-            var titleLayout = title.gameObject.AddComponent<LayoutElement>();
-            titleLayout.minWidth = 0f;
-            titleLayout.preferredWidth = 0f;
-            titleLayout.flexibleWidth = 1f;
-
-            _materialText = MaterialEditorControlFactory.CreateText(
-                "CategoryNavigatorMaterial",
+            var materialHeader = MaterialEditorControlFactory.CreatePanel(
+                "CategoryNavigatorMaterialHeader",
                 Panel.transform,
-                string.Empty,
-                MaterialEditorTextRole.SecondaryChrome);
-            ConfigureSingleLineText(_materialText);
-            _materialText.transform.SetRect(
+                MaterialEditorPanelRole.MaterialRow);
+            materialHeader.transform.SetRect(
                 0f, 1f, 1f, 1f,
                 MaterialEditorLayout.Margin,
                 -MaterialEditorLayout.HeaderHeight * 2f,
                 -MaterialEditorLayout.Margin,
                 -MaterialEditorLayout.HeaderHeight);
+
+            _materialText = MaterialEditorControlFactory.CreateText(
+                "CategoryNavigatorMaterial",
+                materialHeader.transform,
+                string.Empty,
+                MaterialEditorTextRole.Label);
+            ConfigureSingleLineText(_materialText);
+            _materialText.alignment = TextAnchor.MiddleCenter;
+            _materialText.transform.SetRect();
 
             _shaderHeader = MaterialEditorControlFactory.CreatePanel(
                 "CategoryNavigatorShaderHeader",
@@ -111,11 +96,14 @@ namespace MaterialEditorAPI
                 string.Empty,
                 MaterialEditorTextRole.Label);
             ConfigureSingleLineText(_shaderText);
+            _shaderText.alignment = TextAnchor.MiddleCenter;
             _shaderText.transform.SetRect();
 
             _scrollRect = MaterialEditorControlFactory.CreateScrollView(
                 "CategoryNavigatorScrollView",
                 Panel.transform);
+            MaterialEditorScrollStyleState.Assign(_scrollRect, false).SideList = true;
+            MaterialEditorStyles.ApplyScrollView(_scrollRect);
             _scrollRect.transform.SetRect(
                 0f, 0f, 1f, 1f,
                 MaterialEditorLayout.Margin,
@@ -149,7 +137,9 @@ namespace MaterialEditorAPI
 
         internal Image Panel { get; }
 
-        internal bool Visible => _visible && HasCategories();
+        // _visible is the user's preference; an empty current section only
+        // suppresses the panel temporarily, without changing that preference.
+        internal bool Visible => _visible && _sectionId != null;
         internal void ApplySettings(float width)
         {
             ApplyPanelRect(width);
@@ -222,9 +212,9 @@ namespace MaterialEditorAPI
                 return;
             }
 
-            UpdateVisibility();
             if (forceRebuild || section.Id != _sectionId)
                 Rebuild(section);
+            UpdateVisibility();
             UpdateHighlight(section.FindCategoryAtRow(rowIndex));
         }
 
@@ -243,18 +233,6 @@ namespace MaterialEditorAPI
                 0f,
                 -MaterialEditorLayout.Margin,
                 0f);
-        }
-
-        private bool HasCategories()
-        {
-            if (_presentation == null)
-                return false;
-
-            foreach (var section in _presentation.MaterialSections)
-                if (section.Categories.Count > 0)
-                    return true;
-
-            return false;
         }
 
         private void Rebuild(MaterialSectionPresentation section)

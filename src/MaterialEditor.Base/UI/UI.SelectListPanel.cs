@@ -84,6 +84,7 @@ namespace MaterialEditorAPI
             _scrollRect.horizontal = false;
             _scrollRect.vertical = true;
             _scrollRect.movementType = ScrollRect.MovementType.Clamped;
+            MaterialEditorScrollStyleState.Assign(_scrollRect, false).SideList = true;
             MaterialEditorStyles.ApplyScrollView(_scrollRect);
 
             if (selectionChrome)
@@ -282,7 +283,7 @@ namespace MaterialEditorAPI
         private void ConfigureSelectionChrome()
         {
             _titleText.alignment = TextAnchor.MiddleLeft;
-            _titleText.fontStyle = FontStyle.Bold;
+            _titleText.fontStyle = FontStyle.Normal;
             MaterialEditorTextFitting.ApplyAdaptiveSingleLine(
                 _titleText,
                 MaterialEditorTheme.Typography.PrimaryFontSize);
