@@ -166,16 +166,16 @@ namespace KK_Plugins.MaterialEditor
             GetController(gameObject).SetMaterialTextureFromFile(objectData.Slot, objectData.ObjectType, material, propertyName, filePath, gameObject, true);
         }
 
-        public void SetMaterialTexture(
+        public Action SetMaterialTexture(
             object data,
             Material material,
             string propertyName,
             string filePath,
             GameObject gameObject,
-            Action<bool> completed)
+            Action<MaterialEditResult> completed)
         {
             var objectData = GetObjectData(data);
-            GetController(gameObject).QueueMaterialTextureFromFile(
+            return GetController(gameObject).QueueMaterialTextureFromFile(
                 objectData.Slot,
                 objectData.ObjectType,
                 material,

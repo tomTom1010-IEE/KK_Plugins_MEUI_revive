@@ -74,13 +74,13 @@ namespace MaterialEditorAPI
     /// </summary>
     internal interface IMaterialTextureImportCompletionRepository
     {
-        void SetMaterialTexture(
+        Action SetMaterialTexture(
             object data,
             Material material,
             string propertyName,
             string filePath,
             GameObject gameObject,
-            Action<bool> completed);
+            Action<MaterialEditResult> completed);
     }
 
     /// <summary>

@@ -17,6 +17,9 @@ namespace MaterialEditorAPI
         private readonly MaterialEditService _editService;
         // Texture watching is process-wide so all UI hosts share one active watcher.
         private static FileSystemWatcher _textureWatcher;
+        private static MaterialEditorAssetWorkflow _watcherOwner;
+        private readonly MaterialEditRequestQueue _imports = new MaterialEditRequestQueue();
+        private FileSystemWatcher _ownedWatcher;
         private bool _disposed;
 
         internal MaterialEditorAssetWorkflow(
@@ -29,247 +32,139 @@ namespace MaterialEditorAPI
                 throw new ArgumentNullException("editService");
             _host = host;
             _editService = editService;
+            _host.StartCoroutine(PumpImports());
         }
 
-        internal void ImportTexture(
-            TexturePropertyRowModel textureItem,
-            GameObject gameObject,
-            object data,
-            Material material,
-            string propertyName)
+        private IEnumerator PumpImports()
+        {
+            while (!_disposed && _host != null)
+            {
+                _imports.Pump();
+                yield return null;
+            }
+            Dispose();
+        }
+
+        internal void ImportTexture(TexturePropertyRowModel row, GameObject root,
+            object data, Material material, string propertyName)
         {
 #if !API
-            string fileFilter = KK_Plugins.ImageHelper.FileFilter;
+            string filter = KK_Plugins.ImageHelper.FileFilter;
 #else
-            string fileFilter = "Images (*.png;.jpg)|*.png;*.jpg|All files|*.*";
+            string filter = "Images (*.png;.jpg)|*.png;*.jpg|All files|*.*";
 #endif
-            var propertyHandle = MaterialPropertyIdCache.Get(propertyName);
-            KKAPI.Utilities.OpenFileDialog.Show(
-                OnFileAccept,
-                "Open image",
-                ExportPath,
-                fileFilter,
-                ".png");
-
-            void OnFileAccept(string[] files)
-            {
-                ThreadingHelper.Instance.StartSyncInvoke(
-                    () =>
-                    {
-                        if (IsHostAlive())
-                            _host.StartCoroutine(
-                                ApplyFileSelectionOnMainThread(files));
-                    });
-            }
-
-            IEnumerator ApplyFileSelectionOnMainThread(string[] files)
-            {
-                // StartSyncInvoke is drained by BepInEx.Update. Yield once so
-                // disk reads run outside that drain.
-                yield return null;
-
-                if (material == null || gameObject == null)
-                    yield break;
-
-                if (files == null || files.Length == 0 || files[0].IsNullOrEmpty())
+            var target = new MaterialEditTarget(root, material, propertyName);
+            KKAPI.Utilities.OpenFileDialog.Show(files =>
+                ThreadingHelper.Instance.StartSyncInvoke(() =>
                 {
-                    textureItem.Changed =
-                        !_editService.GetMaterialTextureValueOriginal(
-                            data,
-                            material,
-                            propertyName,
-                            gameObject);
-                    var currentTexture = MaterialPropertyAccess.GetTexture(
-                        material,
-                        propertyHandle);
-                    textureItem.Exists = currentTexture != null;
-                    textureItem.RefreshState?.Invoke();
-                    yield break;
-                }
-
-                string filePath = files[0];
-                _editService.SetMaterialTexture(
-                    data,
-                    material,
-                    propertyName,
-                    filePath,
-                    gameObject,
-                    succeeded =>
+                    if (!IsHostAlive() || !target.IsAlive || files == null
+                        || files.Length == 0 || string.IsNullOrEmpty(files[0])) return;
+                    QueueTexture(target, data, files[0], result =>
                     {
-                        if (!IsHostAlive()
-                            || material == null
-                            || gameObject == null)
-                            return;
-
-                        // Character and Studio repositories apply Texture2D imports
-                        // on their next Update. Refresh only after that work reports
-                        // completion, and derive both flags from the real edit/material
-                        // state instead of assuming that decoding succeeded.
-                        textureItem.Changed =
-                            !_editService.GetMaterialTextureValueOriginal(
-                                data,
-                                material,
-                                propertyName,
-                                gameObject);
-                        textureItem.Exists = MaterialPropertyAccess.GetTexture(
-                            material,
-                            propertyHandle) != null;
-                        textureItem.RefreshState?.Invoke();
-
-                        if (!succeeded)
-                        {
-                            MaterialEditorPluginBase.Logger.LogWarning(
-                                $"Could not import texture '{filePath}' for {propertyName}.");
-                        }
+                        if (!IsHostAlive() || !target.IsAlive) return;
+                        row.Changed = !_editService.GetMaterialTextureValueOriginal(data, material, propertyName, root);
+                        row.Exists = MaterialPropertyAccess.GetTexture(material, MaterialPropertyIdCache.Get(propertyName)) != null;
+                        row.RefreshState?.Invoke();
+                        ReportImportResult(result, propertyName);
                     });
-
-                DisposeTextureWatcher();
-                if (!WatchTexChanges.Value)
-                    yield break;
-
-                var directory = Path.GetDirectoryName(filePath);
-                if (directory == null)
-                    yield break;
-
-                _textureWatcher = new FileSystemWatcher(
-                    directory,
-                    Path.GetFileName(filePath));
-                _textureWatcher.Changed += (sender, args) =>
-                {
-                    if (WatchTexChanges.Value && File.Exists(filePath))
-                        ScheduleTextureWatcherImport(
-                            data,
-                            material,
-                            propertyName,
-                            filePath,
-                            gameObject);
-                };
-                _textureWatcher.Deleted +=
-                    (sender, args) => DisposeTextureWatcher();
-                _textureWatcher.Error +=
-                    (sender, args) => DisposeTextureWatcher();
-                _textureWatcher.EnableRaisingEvents = true;
-            }
+                    WatchTexture(target, data, files[0]);
+                }), "Open image", ExportPath, filter, ".png");
         }
 
-        internal void ImportCubemap(
-            CubemapPropertyRowModel cubemapItem,
-            GameObject gameObject,
-            object data,
-            Material material,
-            string propertyName)
+        private void QueueTexture(MaterialEditTarget target, object data, string path,
+            Action<MaterialEditResult> completed, bool watching = false)
         {
-            const string fileFilter = "Cubemap panoramas (*.png;*.hdr)|*.png;*.hdr|PNG images (*.png)|*.png|Radiance HDR images (*.hdr)|*.hdr|All files|*.*";
-            var propertyHandle = MaterialPropertyIdCache.Get(propertyName);
-            KKAPI.Utilities.OpenFileDialog.Show(
-                OnFileAccept,
-                "Open Cubemap source",
-                ExportPath,
-                fileFilter,
-                ".png");
-
-            void OnFileAccept(string[] files)
+            _imports.Enqueue(target, IsHostAlive, done =>
             {
-                ThreadingHelper.Instance.StartSyncInvoke(
-                    () =>
-                    {
-                        if (!IsHostAlive()
-                            || material == null
-                            || gameObject == null
-                            || files == null
-                            || files.Length == 0
-                            || files[0].IsNullOrEmpty())
-                            return;
+                // Cancel only this repository request, not another UI owner's work.
+                return _editService.SetMaterialTexture(data, target.Material, target.Property, path, target.Root, done);
+            }, completed, watching ? path : null);
+        }
 
-                        var filePath = files[0];
+        internal void ImportCubemap(CubemapPropertyRowModel row, GameObject root,
+            object data, Material material, string propertyName)
+        {
+            const string filter = "Cubemap panoramas (*.png;*.hdr)|*.png;*.hdr|All files|*.*";
+            var target = new MaterialEditTarget(root, material, propertyName);
+            KKAPI.Utilities.OpenFileDialog.Show(files =>
+                ThreadingHelper.Instance.StartSyncInvoke(() =>
+                {
+                    if (!IsHostAlive() || !target.IsAlive || files == null
+                        || files.Length == 0 || string.IsNullOrEmpty(files[0])) return;
+                    var path = files[0];
+                    _imports.Enqueue(target, IsHostAlive, done =>
+                    {
+                        var runner = _host.gameObject.AddComponent<MaterialEditorCubemapImportRunner>();
                         try
                         {
-                            var runner = _host.gameObject.AddComponent<
-                                MaterialEditorCubemapImportRunner>();
-                            runner.Begin(
-                                filePath,
-                                () => IsHostAlive()
-                                      && material != null
-                                      && gameObject != null
-                                      && MaterialPropertyAccess.HasProperty(
-                                          material,
-                                          propertyHandle),
-                                (encodedData, contentKey, warmLease) =>
+                            runner.Begin(path, () => IsHostAlive() && target.IsAlive,
+                                (bytes, key, lease) =>
                                 {
-                                    // Keep the preheated cache entry alive until
-                                    // the repository has acquired its own lease.
-                                    if (warmLease == null)
-                                        return false;
-                                    if (_editService.SupportsMaterialCubemapDataImport(
-                                            data))
-                                    {
-                                        // A supported repository reports the
-                                        // real persistence/application result.
-                                        // Do not reinterpret failure as a reason
-                                        // to retry through the file-path API.
-                                        return _editService.SetMaterialCubemap(
-                                            data,
-                                            material,
-                                            propertyName,
-                                            encodedData,
-                                            contentKey,
-                                            gameObject);
-                                    }
-
-                                    // Repositories without preloaded-data support expose only
-                                    // the file-path API. Built-in Chara
-                                    // and Studio repositories use the byte seam,
-                                    // so they do not repeat disk IO here.
-                                    MaterialEditorPluginBase.Logger?.LogWarning(
-                                        "The active Material Editor repository does not support "
-                                        + "preloaded Cubemap data; using its file import path.");
-                                    _editService.SetMaterialCubemap(
-                                        data,
-                                        material,
-                                        propertyName,
-                                        filePath,
-                                        gameObject);
-                                    return true;
+                                    if (lease == null) return MaterialEditResult.FromApplied(false);
+                                    if (_editService.SupportsMaterialCubemapDataImport(data))
+                                        return MaterialEditResult.FromApplied(_editService.SetMaterialCubemap(
+                                            data, material, propertyName, bytes, key, root));
+                                    _editService.SetMaterialCubemap(data, material, propertyName, path, root);
+                                    return new MaterialEditResult(MaterialEditStatus.Unverified, "Legacy void API");
                                 },
-                                message => MaterialEditorPluginBase.Logger?.LogInfo(
-                                    message),
-                                message => MaterialEditorPluginBase.Logger?.LogWarning(
-                                    message),
-                                message => MaterialEditorPluginBase.Logger?.LogError(
-                                    "Could not import Cubemap '"
-                                    + propertyName
-                                    + "': "
-                                    + message),
-                                succeeded =>
-                                {
-                                    if (!IsHostAlive()
-                                        || material == null
-                                        || gameObject == null)
-                                        return;
-
-                                    cubemapItem.Changed =
-                                        !_editService.GetMaterialCubemapValueOriginal(
-                                            data,
-                                            material,
-                                            propertyName,
-                                            gameObject);
-                                    cubemapItem.Exists =
-                                        MaterialPropertyAccess.GetTexture(
-                                            material,
-                                            propertyHandle) is Cubemap;
-                                    cubemapItem.RefreshState?.Invoke();
-                                });
+                                message => MaterialEditorPluginBase.Logger?.LogInfo(message),
+                                message => MaterialEditorPluginBase.Logger?.LogWarning(message),
+                                message => MaterialEditorPluginBase.Logger?.LogError(message),
+                                done);
                         }
-                        catch (Exception exception)
+                        catch
                         {
-                            MaterialEditorPluginBase.Logger?.LogError(
-                                "Could not start Cubemap import '"
-                                + propertyName
-                                + "': "
-                                + exception.Message);
+                            UnityEngine.Object.Destroy(runner);
+                            throw;
                         }
+                        return runner.Cancel;
+                    }, result =>
+                    {
+                        if (!IsHostAlive() || !target.IsAlive) return;
+                        row.Changed = !_editService.GetMaterialCubemapValueOriginal(data, material, propertyName, root);
+                        row.Exists = MaterialPropertyAccess.GetTexture(material, MaterialPropertyIdCache.Get(propertyName)) is Cubemap;
+                        row.RefreshState?.Invoke();
+                        ReportImportResult(result, propertyName);
                     });
-            }
+                }), "Open Cubemap source", ExportPath, filter, ".png");
+        }
+
+        private static void ReportImportResult(MaterialEditResult result, string property)
+        {
+            if (result.Status == MaterialEditStatus.Failed || result.Status == MaterialEditStatus.Unverified)
+                MaterialEditorPluginBase.Logger?.LogWarning("Import " + property + ": "
+                    + result.Status + " (" + result.Stage + ") " + result.Diagnostic);
+        }
+
+        private void WatchTexture(MaterialEditTarget target, object data, string path)
+        {
+            DisposeTextureWatcher();
+            if (!WatchTexChanges.Value) return;
+            var directory = Path.GetDirectoryName(path);
+            if (directory == null) return;
+            var watcher = new FileSystemWatcher(directory, Path.GetFileName(path));
+            _textureWatcher = _ownedWatcher = watcher;
+            _watcherOwner = this;
+            int notificationPending = 0;
+            watcher.Changed += (sender, args) =>
+            {
+                // No Unity/config access on the watcher thread; at most one marshalled notification.
+                if (System.Threading.Interlocked.Exchange(ref notificationPending, 1) != 0) return;
+                ThreadingHelper.Instance.StartSyncInvoke(() =>
+                {
+                    System.Threading.Interlocked.Exchange(ref notificationPending, 0);
+                    if (IsHostAlive() && ReferenceEquals(_textureWatcher, watcher)
+                        && target.IsAlive && WatchTexChanges.Value && File.Exists(path))
+                        QueueTexture(target, data, path, result => ReportImportResult(result, target.Property), true);
+                });
+            };
+            Action close = () => ThreadingHelper.Instance.StartSyncInvoke(() =>
+            {
+                if (ReferenceEquals(_textureWatcher, watcher)) DisposeTextureWatcher();
+            });
+            watcher.Deleted += (sender, args) => close();
+            watcher.Error += (sender, args) => close();
+            watcher.EnableRaisingEvents = true;
         }
 
         internal void ExportTexture(Material material, string propertyName)
@@ -340,46 +235,21 @@ namespace MaterialEditorAPI
         {
             var watcher = _textureWatcher;
             _textureWatcher = null;
+            if (_watcherOwner != null) _watcherOwner._ownedWatcher = null;
+            _watcherOwner = null;
             watcher?.Dispose();
         }
 
         public void Dispose()
         {
-            if (_disposed)
-                return;
+            if (_disposed) return;
             _disposed = true;
-            DisposeTextureWatcher();
+            _imports.Dispose();
+            if (_ownedWatcher != null && ReferenceEquals(_textureWatcher, _ownedWatcher))
+                DisposeTextureWatcher();
         }
 
-        private void ScheduleTextureWatcherImport(
-            object data,
-            Material material,
-            string propertyName,
-            string filePath,
-            GameObject gameObject)
-        {
-            // FileSystemWatcher raises Changed on a ThreadPool thread, so
-            // marshal the Texture2D import before it touches Unity objects.
-            ThreadingHelper.Instance.StartSyncInvoke(() =>
-            {
-                if (IsHostAlive()
-                    && material != null
-                    && gameObject != null
-                    && WatchTexChanges.Value
-                    && File.Exists(filePath))
-                    _editService.SetMaterialTexture(
-                        data,
-                        material,
-                        propertyName,
-                        filePath,
-                        gameObject);
-            });
-        }
-
-        private bool IsHostAlive()
-        {
-            return _host != null;
-        }
+        private bool IsHostAlive() => !_disposed && _host != null;
 
         private static string SanitizeMaterialName(Material material)
         {
