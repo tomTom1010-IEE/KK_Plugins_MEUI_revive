@@ -305,7 +305,6 @@ namespace KK_Plugins.MaterialEditor
             if (MaterialEditorPlugin.RimRemover.Value)
                 RemoveRim();
 #endif
-            if (prepareCubemaps) CompletePreparedRestore(generation);
         }
 
         /// <summary>

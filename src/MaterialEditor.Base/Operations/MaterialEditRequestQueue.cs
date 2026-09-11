@@ -26,11 +26,15 @@ namespace MaterialEditorAPI
             && Material.shader == _shader && Material.NameFormatted() == MaterialName;
 
         internal bool Matches(GameObject root, string materialName, string property) =>
-            ReferenceEquals(Root, root) && (materialName == null || MaterialName == materialName)
+            Root != null && root != null
+            && (ReferenceEquals(Root, root) || Root.transform.IsChildOf(root.transform)
+                || root.transform.IsChildOf(Root.transform))
+            && (materialName == null || MaterialName == materialName)
             && (property == null || Property == property);
 
         internal bool SameProperty(MaterialEditTarget other) =>
-            other != null && Matches(other.Root, other.MaterialName, other.Property);
+            other != null && ReferenceEquals(Root, other.Root)
+            && MaterialName == other.MaterialName && Property == other.Property;
     }
 
     /// <summary>

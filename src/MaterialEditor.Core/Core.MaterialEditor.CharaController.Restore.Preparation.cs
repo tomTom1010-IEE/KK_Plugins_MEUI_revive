@@ -12,6 +12,7 @@ namespace KK_Plugins.MaterialEditor
         private readonly List<MaterialEditorCubemapImportCoordinator> _restorePreparations =
             new List<MaterialEditorCubemapImportCoordinator>();
         private int _restoreGeneration;
+        private int _restoreRevision;
         private Coroutine _restoreRoutine;
         private MonoBehaviour _restoreHost;
         private bool _restorePending;
@@ -26,7 +27,8 @@ namespace KK_Plugins.MaterialEditor
             _restoreHair |= hair;
             _restoreBody |= body;
             _restorePending = true;
-            CancelRestorePreparations();
+            // Keep valid conversion progress; explicit lifecycle changes invalidate it.
+            _restoreRevision++;
             ResumePreparedRestore();
         }
 
@@ -41,6 +43,7 @@ namespace KK_Plugins.MaterialEditor
         private IEnumerator RunPreparedRestore()
         {
             var generation = _restoreGeneration;
+            var revision = _restoreRevision;
             var load = LoadDataCore(_restoreClothes, _restoreAccessories, _restoreHair, _restoreBody, true);
             try
             {
@@ -49,7 +52,7 @@ namespace KK_Plugins.MaterialEditor
             finally
             {
                 (load as IDisposable)?.Dispose();
-                CompletePreparedRestore(generation);
+                CompletePreparedRestore(generation, revision);
             }
         }
 
@@ -63,11 +66,12 @@ namespace KK_Plugins.MaterialEditor
             }
         }
 
-        private void CompletePreparedRestore(int generation)
+        private void CompletePreparedRestore(int generation, int revision)
         {
             if (generation != _restoreGeneration) return;
-            _restorePending = false;
-            _restoreClothes = _restoreAccessories = _restoreHair = _restoreBody = false;
+            _restorePending = revision != _restoreRevision;
+            if (!_restorePending)
+                _restoreClothes = _restoreAccessories = _restoreHair = _restoreBody = false;
             _restoreRoutine = null;
             _restoreHost = null;
         }

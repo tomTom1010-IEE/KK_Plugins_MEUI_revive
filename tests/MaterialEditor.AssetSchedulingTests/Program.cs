@@ -62,6 +62,13 @@ static class Program
             var material = new UnityEngine.Material();
             var target = new MaterialEditTarget(root, material, "Tex");
             var mainThread = Environment.CurrentManagedThreadId;
+            var child = new UnityEngine.GameObject();
+            child.transform.parent = root.transform;
+            var childTarget = new MaterialEditTarget(child, material, "Tex");
+            Check(childTarget.Matches(root, "material", "Tex"), "Parent cancels child scope");
+            Check(target.Matches(child, "material", "Tex"), "Child invalidates overlapping parent scope");
+            Check(!childTarget.Matches(new UnityEngine.GameObject(), "material", "Tex"), "Unrelated objects stay isolated");
+            Check(!childTarget.SameProperty(target), "Watcher coalescing keeps exact scope");
             using (var queue = new MaterialEditRequestQueue())
             {
                 var completions = 0;
@@ -116,7 +123,13 @@ static class Program
 
 namespace UnityEngine
 {
-    public class GameObject { }
+    public class GameObject { public Transform transform = new Transform(); }
+    public class Transform
+    {
+        public Transform parent;
+        public bool IsChildOf(Transform other)
+        { for (var node = this; node != null; node = node.parent) if (ReferenceEquals(node, other)) return true; return false; }
+    }
     public class Shader { }
     public class Material { public Shader shader = new Shader(); }
 }
