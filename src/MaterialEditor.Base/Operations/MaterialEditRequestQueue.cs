@@ -25,19 +25,28 @@ namespace MaterialEditorAPI
         internal bool IsAlive => Root != null && Material != null
             && Material.shader == _shader && Material.NameFormatted() == MaterialName;
 
-        internal bool Matches(GameObject root, string materialName, string property) =>
-            ReferenceEquals(Root, root) && (materialName == null || MaterialName == materialName)
-            && (property == null || Property == property);
+        internal bool Matches(GameObject root, string materialName, string property)
+        {
+            if (Root == null || root == null
+                || (materialName != null && MaterialName != materialName)
+                || (property != null && Property != property)) return false;
+            // Reset addresses a material (or one of its texture slots), not an
+            // arbitrary overlap between object hierarchies. Keep the same-root
+            // name group; different roots must actually address this material.
+            return ReferenceEquals(Root, root) || (Material != null
+                && MaterialAPI.GetObjectMaterials(root, MaterialName).Contains(Material));
+        }
 
         internal bool SameProperty(MaterialEditTarget other) =>
-            other != null && Matches(other.Root, other.MaterialName, other.Property);
+            other != null && ReferenceEquals(Root, other.Root)
+            && MaterialName == other.MaterialName && Property == other.Property;
     }
 
     /// <summary>
     /// Main-thread FIFO. Acceptance precedes async reads. Owners pump at most one
     /// start per Update; completions never recursively start the next request.
     /// </summary>
-    internal sealed class MaterialEditRequestQueue : IDisposable
+    internal sealed partial class MaterialEditRequestQueue : IDisposable
     {
         private sealed class Request
         {
@@ -47,6 +56,7 @@ namespace MaterialEditorAPI
             internal Func<Action<MaterialEditResult>, Action> Start;
             internal Action<MaterialEditResult> Completed;
             internal Action Cancel;
+            internal Action Advance;
             internal bool Finished;
             internal MaterialEditStatus Status;
 
@@ -59,6 +69,7 @@ namespace MaterialEditorAPI
                 Completed = null;
                 Start = null;
                 Cancel = null;
+                Advance = null;
                 IsValid = null;
                 try { callback?.Invoke(result); }
                 catch (Exception ex) { MaterialEditorPluginBase.Logger?.LogWarning(ex); }
@@ -79,10 +90,10 @@ namespace MaterialEditorAPI
 
         internal Action Enqueue(MaterialEditTarget target, Func<bool> valid,
             Func<Action<MaterialEditResult>, Action> start,
-            Action<MaterialEditResult> completed, string watchPath = null)
+            Action<MaterialEditResult> completed, string watchPath = null, Action advance = null)
         {
             var request = new Request { Target = target, IsValid = valid,
-                Start = start, Completed = completed, WatchPath = watchPath };
+                Start = start, Completed = completed, WatchPath = watchPath, Advance = advance };
             // Only watcher refreshes coalesce. Explicit user imports are never displaced.
             if (watchPath != null)
                 CancelWhere(x => x.WatchPath == watchPath && target.SameProperty(x.Target),
@@ -111,7 +122,19 @@ namespace MaterialEditorAPI
             if (_disposed) return;
             if (_active != null && !_active.Finished)
             {
-                if (!Valid(_active)) CancelRequest(_active, MaterialEditStatus.Cancelled);
+                var active = _active;
+                if (!Valid(active)) CancelRequest(active, MaterialEditStatus.Cancelled);
+                else
+                {
+                    try { if (!active.Finished) active.Advance?.Invoke(); }
+                    catch (Exception ex)
+                    {
+                        var cancel = active.Cancel;
+                        active.Finish(new MaterialEditResult(MaterialEditStatus.Failed, "Advance", ex.Message));
+                        try { cancel?.Invoke(); }
+                        catch (Exception cleanup) { MaterialEditorPluginBase.Logger?.LogWarning(cleanup); }
+                    }
+                }
                 return;
             }
             _active = null;
@@ -167,12 +190,21 @@ namespace MaterialEditorAPI
 
         internal static void CancelTarget(GameObject root, string materialName = null, string property = null)
         {
+            // Capture every old request before invoking any completion callbacks.
+            // A callback may enqueue a new import on another registered queue;
+            // that import must not inherit cancellation from this Reset.
+            var removed = new List<Request>();
             foreach (var weak in Queues.ToArray())
             {
                 var queue = weak.Target as MaterialEditRequestQueue;
-                queue?.CancelWhere(x => x.Target.Matches(root, materialName, property),
-                    MaterialEditStatus.Cancelled, true);
+                if (queue == null) continue;
+                var pending = queue._pending.FindAll(x => x.Target.Matches(root, materialName, property));
+                foreach (var request in pending) queue._pending.Remove(request);
+                removed.AddRange(pending);
+                if (queue._active != null && queue._active.Target.Matches(root, materialName, property))
+                    removed.Add(queue._active);
             }
+            foreach (var request in removed) CancelRequest(request, MaterialEditStatus.Cancelled);
         }
 
         public void Dispose()

@@ -62,12 +62,11 @@ namespace KK_Plugins.MaterialEditor
             // Track slot replacement without narrowing the caller's apply scope.
             var location = FindGameObject(objectType, slot);
             var target = new MaterialEditTarget(go, material, propertyName);
-            return _textureImports.Enqueue(target,
+            return _textureImports.EnqueueFile(target,
                 () => this != null && GetCoordinateIndex(objectType) == coordinate
                     && FindGameObject(objectType, slot) == location
-                    && !CoordinateChanging && File.Exists(filePath),
-                done => { done(MaterialEditResult.FromApplied(
-                    TrySetMaterialTextureFromFile(slot, objectType, material, propertyName, filePath, go))); return null; },
+                    && !CoordinateChanging,
+                filePath, bytes => TrySetMaterialTexture(slot, objectType, material, propertyName, bytes, go),
                 completed);
         }
 

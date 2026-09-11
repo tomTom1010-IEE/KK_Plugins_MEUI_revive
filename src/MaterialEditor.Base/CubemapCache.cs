@@ -75,6 +75,12 @@ namespace MaterialEditorAPI
             return cubemap != null;
         }
 
+        internal bool HasLiveLease(int textureId)
+        {
+            MaterialEditorCubemapLease lease;
+            return _leases.TryGetValue(textureId, out lease) && lease.Cubemap != null;
+        }
+
         internal void Store(int textureId, MaterialEditorCubemapLease lease)
         {
             if (lease == null)
@@ -83,8 +89,13 @@ namespace MaterialEditorAPI
             MaterialEditorCubemapLease existing;
             if (_leases.TryGetValue(textureId, out existing))
             {
-                lease.Dispose();
-                return;
+                if (existing.Cubemap != null)
+                {
+                    lease.Dispose();
+                    return;
+                }
+                _leases.Remove(textureId);
+                existing.Dispose();
             }
             _leases.Add(textureId, lease);
         }
@@ -192,6 +203,15 @@ namespace MaterialEditorAPI
             _lease = MaterialEditorCubemapCache.PublishConverted(_key, converted);
             ReleaseMemoryReservation();
             IsComplete = true;
+            return true;
+        }
+
+        internal bool ProcessFrame(out string error)
+        {
+            error = null;
+            var budget = new MaterialWorkBudget(MaterialWorkBudget.DefaultMilliseconds, MaterialWorkBudget.DefaultRowLimit);
+            while (!IsComplete && budget.TryStartUnit())
+                if (!ProcessRows(1, out error)) return false;
             return true;
         }
 
@@ -376,6 +396,20 @@ namespace MaterialEditorAPI
             out string warning,
             out string error)
         {
+            bool waiting;
+            return TryBeginAcquire(pngData, contentKey, out lease, out operation, out warning, out error, out waiting);
+        }
+
+        internal static bool TryBeginAcquire(
+            byte[] pngData,
+            MaterialEditorCubemapContentKey contentKey,
+            out MaterialEditorCubemapLease lease,
+            out MaterialEditorCubemapAcquireOperation operation,
+            out string warning,
+            out string error,
+            out bool waitingForAdmission)
+        {
+            waitingForAdmission = false;
             lease = null;
             operation = null;
             warning = null;
@@ -430,7 +464,10 @@ namespace MaterialEditorAPI
                     estimatedPeakBytes,
                     out memoryReservation,
                     out error))
+            {
+                waitingForAdmission = true;
                 return false;
+            }
 
             try
             {

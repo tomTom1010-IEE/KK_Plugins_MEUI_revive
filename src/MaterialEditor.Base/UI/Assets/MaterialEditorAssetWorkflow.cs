@@ -11,7 +11,7 @@ namespace MaterialEditorAPI
     /// Owns Material Editor asset selection, import, export, file watching, and
     /// Cubemap import coordination. Unity work remains hosted by the owning UI.
     /// </summary>
-    internal sealed class MaterialEditorAssetWorkflow : IDisposable
+    internal sealed partial class MaterialEditorAssetWorkflow : IDisposable
     {
         private readonly MaterialEditorUI _host;
         private readonly MaterialEditService _editService;
@@ -19,6 +19,7 @@ namespace MaterialEditorAPI
         private static FileSystemWatcher _textureWatcher;
         private static MaterialEditorAssetWorkflow _watcherOwner;
         private readonly MaterialEditRequestQueue _imports = new MaterialEditRequestQueue();
+        private readonly MaterialEditRequestQueue _exports = new MaterialEditRequestQueue();
         private FileSystemWatcher _ownedWatcher;
         private bool _disposed;
 
@@ -40,6 +41,7 @@ namespace MaterialEditorAPI
             while (!_disposed && _host != null)
             {
                 _imports.Pump();
+                _exports.Pump();
                 yield return null;
             }
             Dispose();
@@ -187,35 +189,6 @@ namespace MaterialEditorAPI
             Utilities.OpenFileInExplorer(filename);
         }
 
-        internal void ExportCubemap(Material material, string propertyName)
-        {
-            var cubemap = MaterialPropertyAccess.GetTexture(
-                material,
-                MaterialPropertyIdCache.Get(propertyName)) as Cubemap;
-            if (cubemap == null)
-                return;
-
-            var materialName = SanitizeMaterialName(material);
-            string filename = Path.Combine(
-                ExportPath,
-                $"_Export_{DateTime.Now:yyyy-MM-dd-HH-mm-ss}_{materialName}_{propertyName}.png");
-            byte[] pngData;
-            string error;
-            if (!MaterialEditorCubemapConversion.TryExport(
-                    cubemap,
-                    out pngData,
-                    out error))
-            {
-                MaterialEditorPluginBase.Logger.LogError(error);
-                MaterialEditorPluginBase.Logger.LogMessage(error);
-                return;
-            }
-
-            File.WriteAllBytes(filename, pngData);
-            MaterialEditorPluginBase.Logger.LogInfo($"Exported {filename}");
-            Utilities.OpenFileInExplorer(filename);
-        }
-
         internal void ExportTextureOriginal(
             Material material,
             string propertyName,
@@ -245,6 +218,7 @@ namespace MaterialEditorAPI
             if (_disposed) return;
             _disposed = true;
             _imports.Dispose();
+            _exports.Dispose();
             if (_ownedWatcher != null && ReferenceEquals(_textureWatcher, _ownedWatcher))
                 DisposeTextureWatcher();
         }

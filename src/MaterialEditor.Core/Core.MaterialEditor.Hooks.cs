@@ -605,12 +605,12 @@ namespace KK_Plugins.MaterialEditor
             if (MakerAPI.InsideAndLoaded)
             {
                 var chaControl = MakerAPI.GetCharacterControl();
-                chaControl.StartCoroutine(MaterialEditorPlugin.GetCharaController(chaControl).LoadData(false, false, false));
+                MaterialEditorPlugin.GetCharaController(chaControl).RequestPreparedRestore(false, false, false);
             }
         }
         internal static void UncensorSelectorHookStudio(ChaControl chaControl)
         {
-            chaControl.StartCoroutine(MaterialEditorPlugin.GetCharaController(chaControl).LoadData(false, false, false));
+            MaterialEditorPlugin.GetCharaController(chaControl).RequestPreparedRestore(false, false, false);
         }
 
 #if KK || KKS
