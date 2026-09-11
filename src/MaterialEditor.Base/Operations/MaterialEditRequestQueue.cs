@@ -37,7 +37,7 @@ namespace MaterialEditorAPI
     /// Main-thread FIFO. Acceptance precedes async reads. Owners pump at most one
     /// start per Update; completions never recursively start the next request.
     /// </summary>
-    internal sealed class MaterialEditRequestQueue : IDisposable
+    internal sealed partial class MaterialEditRequestQueue : IDisposable
     {
         private sealed class Request
         {
@@ -47,6 +47,7 @@ namespace MaterialEditorAPI
             internal Func<Action<MaterialEditResult>, Action> Start;
             internal Action<MaterialEditResult> Completed;
             internal Action Cancel;
+            internal Action Advance;
             internal bool Finished;
             internal MaterialEditStatus Status;
 
@@ -59,6 +60,7 @@ namespace MaterialEditorAPI
                 Completed = null;
                 Start = null;
                 Cancel = null;
+                Advance = null;
                 IsValid = null;
                 try { callback?.Invoke(result); }
                 catch (Exception ex) { MaterialEditorPluginBase.Logger?.LogWarning(ex); }
@@ -79,10 +81,10 @@ namespace MaterialEditorAPI
 
         internal Action Enqueue(MaterialEditTarget target, Func<bool> valid,
             Func<Action<MaterialEditResult>, Action> start,
-            Action<MaterialEditResult> completed, string watchPath = null)
+            Action<MaterialEditResult> completed, string watchPath = null, Action advance = null)
         {
             var request = new Request { Target = target, IsValid = valid,
-                Start = start, Completed = completed, WatchPath = watchPath };
+                Start = start, Completed = completed, WatchPath = watchPath, Advance = advance };
             // Only watcher refreshes coalesce. Explicit user imports are never displaced.
             if (watchPath != null)
                 CancelWhere(x => x.WatchPath == watchPath && target.SameProperty(x.Target),
@@ -112,6 +114,16 @@ namespace MaterialEditorAPI
             if (_active != null && !_active.Finished)
             {
                 if (!Valid(_active)) CancelRequest(_active, MaterialEditStatus.Cancelled);
+                else
+                {
+                    try { _active.Advance?.Invoke(); }
+                    catch (Exception ex)
+                    {
+                        var cancel = _active.Cancel;
+                        _active.Finish(new MaterialEditResult(MaterialEditStatus.Failed, "Advance", ex.Message));
+                        cancel?.Invoke();
+                    }
+                }
                 return;
             }
             _active = null;

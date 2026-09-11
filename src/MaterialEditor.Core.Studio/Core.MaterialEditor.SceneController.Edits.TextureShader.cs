@@ -50,10 +50,9 @@ namespace KK_Plugins.MaterialEditor
         {
             var go = GetObjectByID(id);
             var target = new MaterialEditTarget(go, material, propertyName);
-            return _textureImports.Enqueue(target,
-                () => this != null && GetObjectByID(id) == go && File.Exists(filePath),
-                done => { done(MaterialEditResult.FromApplied(
-                    TrySetMaterialTextureFromFile(id, material, propertyName, filePath))); return null; },
+            return _textureImports.EnqueueFile(target,
+                () => this != null && GetObjectByID(id) == go,
+                filePath, bytes => TrySetMaterialTexture(id, material, propertyName, bytes),
                 completed);
         }
 
