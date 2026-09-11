@@ -9,6 +9,11 @@
     <Import_RootNamespace>MaterialEditor.API</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Assets\MaterialTextureExport.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Manifest\ShaderDefinitionLoader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PluginBase.Configuration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PluginBase.ShaderModels.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PluginBase.ShaderPropertyParsing.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Sections\Properties\PropertyRowBuilders.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialTextureImportTransaction.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Operations\MaterialTextureSnapshot.cs" />
