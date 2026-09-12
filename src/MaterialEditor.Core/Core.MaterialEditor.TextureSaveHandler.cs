@@ -317,5 +317,20 @@ namespace KK_Plugins.MaterialEditor
                     return false;
             return true;
         }
+
+        // Preserve the first equal payload and allocate above the highest existing ID.
+        internal static int GetOrAddTexture(Dictionary<int, TextureContainer> textures, byte[] data)
+        {
+            int highestId = 0;
+            foreach (var texture in textures)
+                if (texture.Value.Data.SequenceEqualFast(data))
+                    return texture.Key;
+                else if (texture.Key > highestId)
+                    highestId = texture.Key;
+
+            highestId++;
+            textures.Add(highestId, CreateTextureContainer(data));
+            return highestId;
+        }
     }
 }

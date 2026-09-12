@@ -162,7 +162,7 @@ namespace KK_Plugins.MaterialEditor
         }
 
         private void CommitTextureImport(MaterialTextureProperty existingProperty, MaterialTextureProperty candidateProperty) =>
-            MaterialTextureImportCommit.Commit(MaterialTexturePropertyList, AnimationControllerMap,
+            MaterialTextureImportTransaction.Commit(MaterialTexturePropertyList, AnimationControllerMap,
                 existingProperty, candidateProperty, x => x.TexID, (x, id) => x.TexID = id,
                 x => x.TexAnimationDef, (x, animation) => x.TexAnimationDef = animation);
 
