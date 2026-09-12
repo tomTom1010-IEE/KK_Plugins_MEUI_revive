@@ -9,6 +9,9 @@
     <Import_RootNamespace>Core.MaterialEditor</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.CharaController.Restore.Properties.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Persistence\MaterialEditLoadContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.CharaController.Persistence.Properties.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AssemblyInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.CharaRepository.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core.MaterialEditor.CharaController.cs" />
